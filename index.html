@@ -454,6 +454,55 @@
     .land-col .def-section { border-top: none; padding-top: 0; }
     .pin-card .key { padding: 14px; }
   }
+  /* ---------- motion everywhere (all switched off under prefers-reduced-motion below) ---------- */
+  /* the photo behind the glass drifts slowly, like VANTA's clouds */
+  body::before { animation: drift 48s ease-in-out infinite alternate; will-change: transform; }
+  @keyframes drift { 0% { transform: scale(1.04) translate(0, 0); } 50% { transform: scale(1.09) translate(-1.6%, -1%); } 100% { transform: scale(1.06) translate(1.4%, 0.8%); } }
+  /* first load: the bar slides down, the logo spins in, the window rises */
+  header { animation: barIn .7s var(--swoop) both; }
+  .logo { animation: logoIn .9s var(--spring) .15s both; }
+  main { animation: winIn .8s var(--swoop) .1s both; }
+  @keyframes barIn { from { transform: translateY(-100%); opacity: 0; } to { transform: none; opacity: 1; } }
+  @keyframes logoIn { 0% { transform: scale(.3) rotate(-25deg); opacity: 0; } 70% { transform: scale(1.08) rotate(4deg); opacity: 1; } 100% { transform: none; } }
+  @keyframes winIn { from { transform: translateY(40px) scale(.97); opacity: 0; } to { transform: none; opacity: 1; } }
+  /* the open tab / sub-tab / filter / choice pops when it becomes the one */
+  .tab.active, .otab.active, .filter-btn.active { animation: pillIn .45s var(--spring) both; }
+  .fuel-btn.sel, .pick.sel { animation: selPop .4s var(--spring) both; }
+  @keyframes pillIn { 0% { transform: scale(.82); } 100% { transform: none; } }
+  @keyframes selPop { 0% { transform: scale(.9); } 60% { transform: scale(1.06); } 100% { transform: none; } }
+  /* anything that appears on a screen (lists, boxes, panels, banners) glides in */
+  .reveal { animation: reveal .5s var(--swoop) both; }
+  .reveal:is(.pick-grid, .fleet-grid) > *, .fleet-grid.anim > * { animation: bounceIn .65s cubic-bezier(.3,1.3,.5,1) both; }
+  .reveal:is(.pick-grid, .fleet-grid) > :nth-child(2), .fleet-grid.anim > :nth-child(2) { animation-delay: .04s; }
+  .reveal:is(.pick-grid, .fleet-grid) > :nth-child(3), .fleet-grid.anim > :nth-child(3) { animation-delay: .08s; }
+  .reveal:is(.pick-grid, .fleet-grid) > :nth-child(4), .fleet-grid.anim > :nth-child(4) { animation-delay: .12s; }
+  .reveal:is(.pick-grid, .fleet-grid) > :nth-child(5), .fleet-grid.anim > :nth-child(5) { animation-delay: .16s; }
+  .reveal:is(.pick-grid, .fleet-grid) > :nth-child(6), .fleet-grid.anim > :nth-child(6) { animation-delay: .20s; }
+  .reveal:is(.pick-grid, .fleet-grid) > :nth-child(n+7), .fleet-grid.anim > :nth-child(n+7) { animation-delay: .24s; }
+  .reveal tbody tr, .day-panel.reveal tbody tr { animation: item .45s ease both; }
+  .reveal tbody tr:nth-child(2) { animation-delay: .04s; } .reveal tbody tr:nth-child(3) { animation-delay: .08s; } .reveal tbody tr:nth-child(4) { animation-delay: .12s; }
+  .reveal tbody tr:nth-child(5) { animation-delay: .16s; } .reveal tbody tr:nth-child(n+6) { animation-delay: .2s; }
+  .banner.err.reveal { animation: reveal .35s var(--swoop) both, shake .45s ease .3s; }
+  @keyframes reveal { from { opacity: 0; transform: translateY(14px) scale(.97); } to { opacity: 1; transform: none; } }
+  /* the top-vehicle card gets the glass shine as it lands */
+  .top-card { position: relative; overflow: hidden; }
+  .top-card::after { content: ""; position: absolute; top: 0; bottom: 0; left: 0; width: 40%; pointer-events: none; background: linear-gradient(100deg, transparent, rgba(255,255,255,0.22), transparent); transform: translateX(-120%) skewX(-20deg); }
+  .wgIn .top-card::after, .top-card.reveal::after { animation: shine 1.2s ease .5s; }
+  .top-card .top-photo { animation: bob 3.2s ease-in-out infinite; }
+  /* tap ripple on every button, like VANTA's tiles */
+  :is(.pick, .fuel-btn, .btn-big, .btn-gray, .btn-export, .btn-save, .btn-scan, .key, .filter-btn, .tab, .otab, .fleet-card, .top-card) { position: relative; overflow: hidden; }
+  .rpl { position: absolute; border-radius: 50%; pointer-events: none; background: rgba(255,255,255,0.45); transform: scale(0); animation: rpl .6s ease-out forwards; }
+  :is(.sel, .active, .btn-save, .btn-export) > .rpl { background: rgba(47,74,126,0.25); }
+  @keyframes rpl { to { transform: scale(1); opacity: 0; } }
+  /* the save button breathes once the form is ready, and the saved banner glows */
+  .btn-save:not(:disabled) { animation: ready 2.8s ease-in-out infinite; }
+  @keyframes ready { 0%, 100% { box-shadow: 0 8px 22px rgba(10,15,40,0.28); } 50% { box-shadow: 0 8px 30px rgba(255,255,255,0.45), 0 0 0 4px rgba(255,255,255,0.12); } }
+  #fillSaved:not(.hidden), #loadSaved:not(.hidden) { animation: pop .55s cubic-bezier(.2,.9,.3,1.1) both, glow 1.6s ease .5s 2; }
+  @keyframes glow { 0%, 100% { box-shadow: 0 0 0 0 rgba(120,240,170,0); } 50% { box-shadow: 0 0 0 8px rgba(120,240,170,0.25); } }
+  /* PIN dots and inputs */
+  .input { transition: border-color .15s, box-shadow .25s ease, transform .2s var(--spring); }
+  .input:focus { transform: scale(1.01); }
+  .pin-card.reveal, .pin-card.ok { animation: pop .5s var(--spring) both; }
   @media (prefers-reduced-motion: reduce) { *, *::before, *::after { animation: none !important; transition: none !important; } }
 
   /* Labels (print) */
@@ -1852,10 +1901,10 @@
   function kindLabel(k) { return k === "Cans" ? "Cans" : (k === "Equipment" ? "Equip." : "Truck"); }
 
   // ---------- reports ----------
-  document.querySelectorAll(".filter-btn").forEach(function (b) {
+  document.querySelectorAll(".filter-btn[data-filter]").forEach(function (b) {
     b.addEventListener("click", function () {
       filter = b.getAttribute("data-filter");
-      document.querySelectorAll(".filter-btn").forEach(function (x) { x.classList.remove("active"); });
+      document.querySelectorAll(".filter-btn[data-filter]").forEach(function (x) { x.classList.remove("active"); });
       b.classList.add("active"); chartsAnimUntil = Date.now() + 600; renderReports();
     });
   });
@@ -2809,6 +2858,41 @@
     XLSX.utils.book_append_sheet(wb, ws2, "Tank Loads");
     XLSX.utils.book_append_sheet(wb, ws3, "Trucks");
     XLSX.writeFile(wb, "fuel-log-" + new Date().toISOString().slice(0, 10) + ".xlsx");
+  });
+
+  // ---------- motion everywhere ----------
+  // Anything inside a screen that goes from hidden to shown (pick lists, boxes, panels, banners) glides in.
+  // Whole screens already swoop in through swoopIn(), so those are left alone.
+  if (!lessMotion && window.MutationObserver) {
+    new MutationObserver(function (muts) {
+      muts.forEach(function (m) {
+        var el = m.target;
+        if (el.tagName === "SECTION" || !m.oldValue || !/\bhidden\b/.test(m.oldValue) || el.classList.contains("hidden")) return;
+        el.classList.remove("reveal"); void el.offsetWidth; el.classList.add("reveal");
+        clearTimeout(el._rv); el._rv = setTimeout(function () { el.classList.remove("reveal"); }, 1200);
+      });
+    }).observe(document.querySelector("main"), { subtree: true, attributes: true, attributeFilter: ["class"], attributeOldValue: true });
+  }
+  // A ripple spreads from the finger on every button.
+  var RIPPLE = ".pick, .fuel-btn, .btn-big, .btn-gray, .btn-export, .btn-save, .btn-scan, .key, .filter-btn, .tab, .otab, .fleet-card, .top-card";
+  document.addEventListener("pointerdown", function (ev) {
+    if (lessMotion || !ev.target.closest) return;
+    var b = ev.target.closest(RIPPLE); if (!b || b.disabled) return;
+    var r = b.getBoundingClientRect(), size = Math.max(r.width, r.height) * 2.2, s = document.createElement("span");
+    s.className = "rpl"; s.style.width = s.style.height = size + "px";
+    s.style.left = (ev.clientX - r.left - size / 2) + "px"; s.style.top = (ev.clientY - r.top - size / 2) + "px";
+    b.appendChild(s); setTimeout(function () { if (s.parentNode) s.parentNode.removeChild(s); }, 650);
+  }, true);
+  // Changing a filter or searching re-deals the truck cards and re-counts the numbers.
+  function fleetDeal() {
+    if (lessMotion) return;
+    var g = $("fleetGrid"); g.classList.remove("anim"); void g.offsetWidth; g.classList.add("anim");
+    clearTimeout(g._an); g._an = setTimeout(function () { g.classList.remove("anim"); }, 1100);
+  }
+  document.querySelectorAll(".fleet-btn").forEach(function (b) { b.addEventListener("click", fleetDeal); });
+  $("fleetSearch").addEventListener("input", function () { clearTimeout(fleetDeal._t); fleetDeal._t = setTimeout(fleetDeal, 120); });
+  document.querySelectorAll(".filter-btn[data-filter]").forEach(function (b) {
+    b.addEventListener("click", function () { if (!lessMotion) countUp($("viewReports")); });
   });
 
   // ---------- Fill-Up is home ----------
