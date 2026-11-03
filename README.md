@@ -8,6 +8,7 @@ Fuel log for Maile Concrete. Drivers use a shop tablet to log truck, equipment a
 | --- | --- |
 | `index.html` | The whole app in one file. Open it in a browser on the tablet. |
 | `supabase/setup.sql` | Database setup: tables, security rules and the PIN-checked functions the app calls. |
+| `supabase/rename.sql` | Just the rename functions (also included in `setup.sql`), for adding renaming to a database that's already set up. |
 | `supabase/functions/scan-receipt/index.ts` | Edge Function that reads a receipt photo with Gemini and returns vendor, address, date, time, line items and total. |
 | `supabase/functions/scan-registration/index.ts` | Edge Function that reads a vehicle registration photo with Gemini and returns plate, state, VIN, year, make, model, owner and expiry. |
 
@@ -18,6 +19,8 @@ Fuel log for Maile Concrete. Drivers use a shop tablet to log truck, equipment a
 3. Paste the whole of `supabase/setup.sql` and click **Run**.
 
 It is safe to run again at any time; it only creates what is missing and replaces the functions with the current version. Your data is not touched.
+
+**Renaming trucks, equipment and drivers:** if your database was set up before renaming existed, paste `supabase/rename.sql` into a new query and click **Run** once. Then in Office, tap the pencil on a truck card (Trucks tab) or on any chip under **Manage**. A truck keeps its barcode when renamed, so printed labels keep scanning, and past fill-ups move to the new name.
 
 The default Reports PIN is **1234**. Change it inside the app the first time you open Reports.
 
