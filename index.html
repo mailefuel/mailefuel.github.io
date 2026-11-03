@@ -376,6 +376,25 @@
   .fleet-stats b { display: block; font-size: 15px; font-weight: 600; color: var(--ink); }
   section.wgIn .fleet-grid > * { animation: bounceIn .75s cubic-bezier(.3,1.3,.5,1) both; }
   @media (max-width: 520px) { .fleet-grid { grid-template-columns: 1fr 1fr; } .fleet-photo { height: 90px; } }
+  /* photos on the truck cards */
+  .fleet-photo.has-photo { padding: 0; background: #1b2340; }
+  .fleet-photo.has-photo img { width: 100%; height: 100%; max-width: none; object-fit: cover; opacity: 1; }
+  .fleet-card { position: relative; }
+  .fleet-check { position: absolute; top: 10px; right: 10px; width: 30px; height: 30px; border-radius: 50%; border: 2px solid #fff; background: rgba(20,30,70,0.55); display: none; align-items: center; justify-content: center; font-size: 17px; font-weight: 800; color: transparent; }
+  .fleet-grid.selecting .fleet-check { display: flex; }
+  .fleet-grid.selecting .fleet-card { cursor: pointer; }
+  .fleet-card.picked { box-shadow: 0 0 0 3px #FFFFFF, 0 16px 36px rgba(25,25,60,0.26); }
+  .fleet-card.picked .fleet-check { background: #FFFFFF; color: var(--navy); }
+  .fleet-print { margin-top: -2px; }
+  /* 4x6 labels: one per page for the label printer */
+  .labels.four6 { grid-template-columns: repeat(auto-fill, 4in); justify-content: center; }
+  .labels.four6 .lbl { width: 4in; height: 6in; padding: 0.3in 0.2in; display: flex; flex-direction: column; justify-content: center; border-radius: 0; }
+  .labels.four6 .lbl-name { font-size: 40px; line-height: 1.05; }
+  .labels.four6 .lbl-bar svg { width: 100%; height: 1.4in; }
+  .labels.four6 .lbl-row { flex-direction: column; gap: 10px; margin-top: 14px; }
+  .labels.four6 .lbl-qr img, .labels.four6 .lbl-qr canvas { width: 1.3in !important; height: 1.3in !important; }
+  .labels.four6 .lbl-code { font-size: 18px; }
+  .labels.four6 .lbl-brand { font-size: 13px; }
   /* ---------- landscape tablet: use the full width, two columns, no scrolling for a normal fill-up ---------- */
   .land-cols, .land-col { display: block; }
   @media (orientation: landscape) and (min-width: 900px) {
@@ -437,6 +456,9 @@
     main { max-width: none; padding: 0; margin: 0; width: auto; background: none; border: 0; box-shadow: none; }
     .labels { gap: 8px; }
     .lbl { border: 1px dashed #999; border-radius: 0; }
+    .labels.four6 { display: block; }
+    .labels.four6 .lbl { border: 0; margin: 0; page-break-after: always; break-after: page; }
+    .labels.four6 .lbl:last-child { page-break-after: auto; break-after: auto; }
   }
 </style>
 </head>
@@ -547,6 +569,12 @@
         </div>
       </div>
 
+      <div class="field hidden" id="fillCansField">
+        <label class="label" for="inCansGal">Gas cans on this truck (optional)</label>
+        <input class="input" id="inCansGal" placeholder="0.0" inputmode="decimal" autocomplete="off" />
+        <div class="hint left">Gas put into the cans / jugs this truck carries. Saved as its own gas-can entry for this truck.</div>
+      </div>
+
       <div id="fillError" class="banner err hidden"></div>
       <button class="btn-save" id="btnSaveFill">Save Fill-Up</button>
       <div class="hint">Date and time are recorded automatically</div>
@@ -652,7 +680,15 @@
         </div>
         <input class="input small fleet-search" id="fleetSearch" placeholder="Search name, barcode or driver" autocomplete="off" />
       </div>
-      <div class="sync-line" id="fleetCount"></div>
+      <div class="rep-controls fleet-print">
+        <div class="sync-line" id="fleetCount" style="margin:0"></div>
+        <div class="rep-actions">
+          <button class="btn-gray" id="btnFleetSelect">Select</button>
+          <button class="btn-gray hidden" id="btnFleetSelAll">Select all</button>
+          <button class="btn-export hidden" id="btnFleetPrintSel">Print selected</button>
+          <button class="btn-export" id="btnFleetPrintAll">&#128424; Print all labels</button>
+        </div>
+      </div>
       <div class="fleet-grid" id="fleetGrid"></div>
       <div class="empty hidden" id="fleetEmpty">No trucks match.</div>
     </div>
@@ -872,6 +908,10 @@
     <div class="no-print" style="margin-bottom:14px;">
       <button class="btn-gray" id="btnLabelsBack">&larr; Back</button>
       <button class="btn-export" id="btnLabelsPrint" style="margin-left:8px;">Print</button>
+      <span class="filters" style="display:inline-flex; margin-left:8px; vertical-align:middle;">
+        <button class="filter-btn lblsize" data-size="4x6">4&times;6 label printer</button>
+        <button class="filter-btn lblsize" data-size="sheet">Letter sheet</button>
+      </span>
       <div class="hint left">Print on weatherproof label stock and stick one by each fuel cap. The barcode is for the tablet's scanner; the QR code opens the app on a phone with the truck already selected.</div>
     </div>
     <div class="labels" id="labelsGrid"></div>
@@ -1182,7 +1222,7 @@
     swoopIn($("view" + v.charAt(0).toUpperCase() + v.slice(1)));
     if (v === "reports") { if (!lastSyncTime || Date.now() - lastSyncTime.getTime() > 5000) fetchRemote(); renderReports(); }
     if (v === "truck") renderTruckDetail();
-    if (v === "labels") renderLabels();
+    if (v === "labels") renderLabels(); else if ($("labelPageSize")) $("labelPageSize").textContent = "";
     if (v === "register") renderRegister();
     if (v === "scan") resetScanScreen();
     if (v !== "fill" && v !== "scan") { if (document.activeElement && document.activeElement.blur) document.activeElement.blur(); }
@@ -1380,7 +1420,8 @@
     $("fillOdoField").classList.toggle("hidden", a.kind !== "Truck");
     $("fillHoursField").classList.toggle("hidden", a.kind !== "Equipment");
     $("defCol").classList.toggle("hidden", a.kind === "Cans" || (a.kind === "Equipment" && !a.usesDef));
-    $("inOdo").value = ""; $("inHours").value = ""; $("inFuelGal").value = ""; $("inDefGal").value = "";
+    $("inOdo").value = ""; $("inHours").value = ""; $("inFuelGal").value = ""; $("inDefGal").value = ""; $("inCansGal").value = "";
+    $("fillCansField").classList.toggle("hidden", !carriesCans(a));
     hideErr("fillError");
     renderFuelButtons(); renderDriverLine(); renderForTruck(); updateOdoHint();
     if (!operator) openOperatorPick("fill"); else setView("fill");
@@ -1451,15 +1492,20 @@
   function hideErr(id) { $(id).classList.add("hidden"); }
   function num(v) { var n = parseFloat(String(v || "").replace(/,/g, "")); return isNaN(n) ? 0 : n; }
 
+  // Ford and Ram pickups carry gas cans for the small tools, so their fill-up also takes gas-can gallons.
+  // Matched by name: F250 / F550 / F19 ..., FORD ..., RAM ..., DODGE ...
+  function carriesCans(a) { return !!a && a.kind === "Truck" && /^(FORD|RAM|DODGE)\b|^F[-\s]?\d/i.test(String(a.name || "").trim()); }
+
   $("btnSaveFill").addEventListener("click", async function () {
     if (!selAsset) return setView("scan");
     var a = selAsset;
     var driver = currentDriverName();
     var odo = num($("inOdo").value), hours = num($("inHours").value);
     var fuelGal = num($("inFuelGal").value), defGal = a.kind === "Cans" ? 0 : num($("inDefGal").value);
+    var cansGal = carriesCans(a) ? num($("inCansGal").value) : 0;
 
     if (a.kind === "Truck" && !driver) return showErr("fillError", "Pick the driver.");
-    if (fuelGal <= 0 && defGal <= 0) return showErr("fillError", "Enter the gallons.");
+    if (fuelGal <= 0 && defGal <= 0 && cansGal <= 0) return showErr("fillError", "Enter the gallons.");
     if (a.kind === "Truck" && fuelGal > 0 && odo <= 0) return showErr("fillError", "Enter the odometer reading \u2014 it's needed to track miles per gallon.");
     if (a.kind === "Truck" && fuelGal > 0 && odo > 0 && !fillForce) {
       var last = lastOdoFor(a.name);
@@ -1468,6 +1514,13 @@
     }
     hideErr("fillError"); fillForce = false;
 
+    var parts = [], saveId = null;
+    if (cansGal > 0) {
+      var cans = { id: newId(), ts: new Date().toISOString(), truck: a.name, driver: driver || operator, odometer: null,
+        fuelType: "Gas", fuelGal: cansGal, defGal: 0, notes: "", kind: "Cans", hours: null, by: operator };
+      pending.push({ kind: "fillup", entry: cans }); savePending(); saveId = cans.id;
+    }
+    if (fuelGal > 0 || defGal > 0) {
     var entry = {
       id: newId(), ts: new Date().toISOString(),
       truck: a.kind === "Cans" ? (forTruck || "Gas cans") : a.name,
@@ -1475,14 +1528,15 @@
       fuelType: fuelGal > 0 ? fuelType : "DEF only", fuelGal: fuelGal, defGal: defGal, notes: "",
       kind: a.kind, hours: (a.kind === "Equipment" && hours > 0) ? hours : null, by: operator
     };
-    pending.push({ kind: "fillup", entry: entry }); savePending();
-    var parts = [];
+    pending.push({ kind: "fillup", entry: entry }); savePending(); saveId = entry.id;
+    }
     if (fuelGal > 0) parts.push(fmtGal(fuelGal) + " gal " + fuelType);
     if (defGal > 0) parts.push(fmtGal(defGal) + " gal DEF");
+    if (cansGal > 0) parts.push(fmtGal(cansGal) + " gal Gas in cans");
     var desc = (a.kind === "Cans" ? "Cans" + (forTruck ? " for " + forTruck : "") : a.name) + " \u2014 " + parts.join(" + ");
     selAsset = null;
     setView("scan");
-    await finishSave("fillSaved", $("btnSaveFill"), entry.id, desc);
+    await finishSave("fillSaved", $("btnSaveFill"), saveId, desc);
   });
 
   async function finishSave(bannerId, btn, id, desc) {
@@ -1815,6 +1869,25 @@
   $("fleetSearch").addEventListener("input", function () { renderFleet(); });
 
   // ---------- Office: truck list ----------
+  var fleetSelecting = false, fleetPicked = {};
+  function updateFleetPrint() {
+    var n = Object.keys(fleetPicked).length;
+    $("fleetGrid").classList.toggle("selecting", fleetSelecting);
+    $("btnFleetSelect").textContent = fleetSelecting ? "Done" : "Select";
+    $("btnFleetSelect").classList.toggle("active", fleetSelecting);
+    $("btnFleetSelAll").classList.toggle("hidden", !fleetSelecting);
+    $("btnFleetPrintSel").classList.toggle("hidden", !fleetSelecting);
+    $("btnFleetPrintSel").disabled = n === 0;
+    $("btnFleetPrintSel").textContent = "\u{1F5A8} Print " + n + " selected";
+  }
+  $("btnFleetSelect").addEventListener("click", function () { fleetSelecting = !fleetSelecting; if (!fleetSelecting) fleetPicked = {}; renderFleet(); updateFleetPrint(); });
+  $("btnFleetSelAll").addEventListener("click", function () { fleetShown.forEach(function (t) { if (t.code) fleetPicked[t.code] = 1; }); renderFleet(); updateFleetPrint(); });
+  $("btnFleetPrintSel").addEventListener("click", function () {
+    var codes = Object.keys(fleetPicked); if (!codes.length) return;
+    labelsOnly = codes; labelsBack = "reports"; setView("labels");
+  });
+  $("btnFleetPrintAll").addEventListener("click", function () { labelsOnly = null; labelsBack = "reports"; setView("labels"); });
+  var fleetShown = [];
   // Every active truck and piece of equipment as a card. There are no truck photos yet, so each card shows the
   // truck or equipment picture used across the app.
   function renderFleet() {
@@ -1828,7 +1901,7 @@
     });
     $("fleetCount").textContent = nT + (nT === 1 ? " truck" : " trucks") + " \u00b7 " + nE + " equipment";
     $("fleetCount").className = "sync-line";
-    var grid = $("fleetGrid"); grid.innerHTML = "";
+    var grid = $("fleetGrid"); grid.innerHTML = ""; fleetShown = list;
     $("fleetEmpty").classList.toggle("hidden", list.length > 0);
     list.forEach(function (t) {
       var T = stats.byTruck[canonTruck(t.name)] || null, L = latest[normKey(t.name)] || {}, last = lastFillFor(t.name);
@@ -1836,7 +1909,7 @@
       var drv = t.driver || (last && last.driver) || L.driver || "";
       var b = document.createElement("button"); b.className = "fleet-card";
       b.innerHTML =
-        '<div class="fleet-photo">' + kindIcon(t.kind, t.kind === "Truck" ? 62 : 70) + '</div>' +
+        '<div class="fleet-photo">' + kindIcon(t.kind, t.kind === "Truck" ? 62 : 70) + '</div><div class="fleet-check">\u2713</div>' +
         '<div class="fleet-body"><div class="fleet-name">' + esc(t.name) + '</div>' +
         '<div class="fleet-code">' + esc(t.code || "no barcode") + '</div>' +
         '<div class="fleet-tags"><span class="fleet-tag">' + (t.kind === "Equipment" ? "Equipment" : "Truck") + '</span>' +
@@ -1848,8 +1921,19 @@
           '<div>' + (t.kind === "Truck" ? "Odometer" : "Fill-ups") + '<b>' + (t.kind === "Truck" ? (odo != null ? fmtInt(odo) : dash()) : (T ? T.fillups : 0)) + '</b></div>' +
           '<div>' + (t.kind === "Truck" ? "Avg MPG" : "Fuel") + '<b>' + (t.kind === "Truck" ? (T && T.avgMpg != null ? T.avgMpg : dash()) : (T ? fmtGal(T.fuelGal) + " gal" : dash())) + '</b></div>' +
         '</div></div>';
-      if (T) b.addEventListener("click", function () { detailTruck = canonTruck(t.name); setView("truck"); });
-      else b.classList.add("no-hist");
+      // the machine's own photo, if one is saved as photos/<barcode>.jpg next to this page
+      if (t.code) {
+        var ph = b.querySelector(".fleet-photo"), img = new Image();
+        img.alt = t.name;
+        img.onload = function () { ph.innerHTML = ""; ph.appendChild(img); ph.classList.add("has-photo"); };
+        img.src = "photos/" + encodeURIComponent(t.code) + ".jpg";
+      }
+      if (fleetPicked[t.code]) b.classList.add("picked");
+      b.addEventListener("click", function () {
+        if (fleetSelecting) { if (fleetPicked[t.code]) delete fleetPicked[t.code]; else fleetPicked[t.code] = 1; b.classList.toggle("picked", !!fleetPicked[t.code]); updateFleetPrint(); return; }
+        if (T) { detailTruck = canonTruck(t.name); setView("truck"); }
+      });
+      if (!T) b.classList.add("no-hist");
       grid.appendChild(b);
     });
   }
@@ -2419,8 +2503,16 @@
     try { if (typeof QRCode !== "undefined") new QRCode(d.querySelector(".lbl-qr"), { text: base + "?code=" + encodeURIComponent(t.code), width: 84, height: 84, correctLevel: QRCode.CorrectLevel.M }); } catch (e) {}
     return d;
   }
+  var LABEL_SIZE_KEY = "fl3-label-size", labelSize = localGet(LABEL_SIZE_KEY) || "4x6";
+  document.querySelectorAll(".lblsize").forEach(function (b) {
+    b.addEventListener("click", function () { labelSize = b.getAttribute("data-size"); localSet(LABEL_SIZE_KEY, labelSize); renderLabels(); });
+  });
   function renderLabels() {
     var grid = $("labelsGrid"); grid.innerHTML = "";
+    grid.classList.toggle("four6", labelSize === "4x6");
+    document.querySelectorAll(".lblsize").forEach(function (b) { b.classList.toggle("active", b.getAttribute("data-size") === labelSize); });
+    var ps = $("labelPageSize"); if (!ps) { ps = document.createElement("style"); ps.id = "labelPageSize"; document.head.appendChild(ps); }
+    ps.textContent = labelSize === "4x6" ? "@media print { @page { size: 4in 6in; margin: 0; } }" : "";
     var list = labelsOnly ? trucks.filter(function (t) { return labelsOnly.indexOf(t.code) >= 0; }) : trucks;
     list.forEach(function (t) { grid.appendChild(buildLabel(t)); });
     if (!list.length) grid.innerHTML = '<div class="hint">No trucks or equipment in the list yet.</div>';
