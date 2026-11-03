@@ -135,6 +135,14 @@
   }
   .pick.sel { background: #FFFFFF; color: var(--navy); border-color: #FFFFFF; box-shadow: 0 6px 18px rgba(10,15,40,0.30); }
   .pick.other { color: var(--ink2); font-weight: 500; }
+  /* Pick from list: each truck shows its photo (or the truck/equipment picture) above its name */
+  .pick.pick-photo { padding: 0; display: flex; flex-direction: column; text-align: center; white-space: normal; }
+  .pp-img { display: flex; align-items: center; justify-content: center; height: 92px; background: rgba(10,15,40,0.35); border-bottom: 1px solid rgba(226,231,250,0.18); overflow: hidden; color: var(--ink2); }
+  .pp-img:not(.has-photo) > * { max-height: 60px; width: auto; opacity: .9; }
+  .pp-img.has-photo { background: #1b2340; }
+  .pp-img.has-photo img { width: 100%; height: 100%; object-fit: cover; display: block; transition: transform .6s var(--swoop); }
+  .pick-photo:hover .pp-img.has-photo img { transform: scale(1.07); }
+  .pp-name { padding: 10px 8px 11px; font-size: 15px; font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
   .fuel-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
   .fuel-btn { background: rgba(232,236,255,0.12); color: var(--ink2); border: 1px solid rgba(226,231,250,0.32); border-radius: 16px; padding: 17px 12px; font-size: 17px; font-weight: 700; }
   .fuel-btn.sel { background: #FFFFFF; color: var(--navy); border-color: #FFFFFF; box-shadow: 0 6px 18px rgba(10,15,40,0.30); }
@@ -1498,7 +1506,14 @@
     if (open) {
       list.innerHTML = "";
       trucks.forEach(function (t) {
-        var b = document.createElement("button"); b.className = "pick"; b.textContent = t.name; b.title = t.name;
+        var b = document.createElement("button"); b.className = "pick pick-photo"; b.title = t.name;
+        b.innerHTML = '<span class="pp-img">' + kindIcon(t.kind, t.kind === "Truck" ? 40 : 52, true) + '</span><span class="pp-name">' + esc(t.name) + '</span>';
+        // same photos as Office > Trucks: photos/<barcode>.jpg, else the truck/equipment picture
+        if (t.code) {
+          var ph = b.querySelector(".pp-img"), img = new Image();
+          img.alt = ""; img.onload = function () { ph.innerHTML = ""; ph.appendChild(img); ph.classList.add("has-photo"); };
+          img.src = "photos/" + encodeURIComponent(t.code) + ".jpg";
+        }
         b.addEventListener("click", function () { selectAsset(t); });
         list.appendChild(b);
       });
