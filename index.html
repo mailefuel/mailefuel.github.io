@@ -395,6 +395,25 @@
   .labels.four6 .lbl-qr img, .labels.four6 .lbl-qr canvas { width: 1.3in !important; height: 1.3in !important; }
   .labels.four6 .lbl-code { font-size: 18px; }
   .labels.four6 .lbl-brand { font-size: 13px; }
+  /* Graphs: the vehicle using the most fuel, and a tapped day's fill-ups */
+  .top-card { display: grid; grid-template-columns: auto 1fr auto; gap: 18px; align-items: center; text-align: left; color: var(--ink); cursor: pointer; padding: 16px 20px; }
+  .top-card:hover { transform: translateY(-3px); }
+  .top-card:active { transform: scale(.98); }
+  .top-photo { width: 132px; height: 92px; border-radius: 16px; overflow: hidden; display: flex; align-items: center; justify-content: center; background: radial-gradient(120% 90% at 50% 0%, rgba(255,255,255,0.22), rgba(255,255,255,0.05)); border: 1px solid var(--edge); }
+  .top-photo img.ph { width: 100%; height: 100%; object-fit: cover; }
+  .top-name { font-size: 30px; font-weight: 300; letter-spacing: -0.01em; line-height: 1.1; margin: 4px 0 4px; }
+  .top-sub { font-size: 13.5px; color: var(--ink2); }
+  .top-sub b { color: var(--ink); font-weight: 600; }
+  .top-gal { text-align: right; }
+  .top-gal .hero-num { margin: 0; font-size: clamp(34px, 4.6vw, 48px); }
+  .top-gal small { font-size: 16px; margin-left: 4px; color: var(--ink2); }
+  .top-runners { font-size: 12.5px; color: var(--ink3); margin-top: 6px; }
+  @media (max-width: 640px) { .top-card { grid-template-columns: auto 1fr; } .top-gal { grid-column: 1 / -1; text-align: left; } .top-photo { width: 96px; height: 68px; } }
+  .day-panel { margin-top: 14px; border-top: 1px solid var(--line); padding-top: 12px; }
+  .day-head { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin-bottom: 8px; }
+  .day-title { font-size: 20px; font-weight: 300; }
+  .day-title small { font-size: 13px; color: var(--ink2); margin-left: 8px; }
+  .day-panel td.b { cursor: pointer; }
   /* ---------- landscape tablet: use the full width, two columns, no scrolling for a normal fill-up ---------- */
   .land-cols, .land-col { display: block; }
   @media (orientation: landscape) and (min-width: 900px) {
@@ -756,10 +775,13 @@
     </div>
 
     <div class="chart-grid" id="repCharts">
+      <button class="card chart-card span2 top-card hidden" id="topCard"></button>
       <div class="card chart-card span2 hidden" id="usageCard">
         <div class="chart-head"><div class="sec-title">Gallons given out</div><div class="hint left" id="usageNote" style="margin:0;"></div></div>
         <div class="chart-legend" id="usageLegend"></div>
         <div class="chart-box tall"><canvas id="usageChart" role="img" aria-label="Gallons given out over time, by product"></canvas></div>
+        <div class="hint left" id="usageTapHint">Tap a bar to see what was filled up that day</div>
+        <div class="day-panel hidden" id="dayPanel"></div>
       </div>
       <div class="card chart-card hidden" id="assetCard">
         <div class="chart-head"><div class="sec-title">Top trucks &amp; equipment</div></div>
@@ -1970,6 +1992,7 @@
       card("Spent on loads", fmtMoney(spend), fuelIn > 0 ? "avg " + fmtMoney(spendFuel(ld) / fuelIn) + " / gal fuel" : "", "p");
     renderHero(fl, fuelOut, cansOut);
     $("btnExport").disabled = fl.length === 0 && ld.length === 0;
+    renderTopVehicle(fl, stats);
     renderUsageChart(fl);
     renderAssetChart(fl);
     renderDriverChart(fl);
@@ -2178,18 +2201,88 @@
     }).join("");
   }
 
+  // The vehicle that took the most fuel (Diesel + Gas, not DEF) in the chosen range; tap it for its history.
+  function renderTopVehicle(fl, stats) {
+    var card = $("topCard"), g = {}, total = 0;
+    fl.forEach(function (e) {
+      if (e.kind === "Cans" || !(e.fuelGal > 0)) return;
+      var k = canonTruck(e.truck);
+      if (!g[k]) g[k] = { gal: 0, fills: 0 };
+      g[k].gal += e.fuelGal; g[k].fills++; total += e.fuelGal;
+    });
+    var names = Object.keys(g).sort(function (a, b) { return g[b].gal - g[a].gal; });
+    if (!names.length) { card.classList.add("hidden"); return; }
+    var top = names[0], G = g[top], T = stats.byTruck[top] || {}, info = truckInfo(top) || {}, kind = info.kind || T.kind || "Truck";
+    var pct = total > 0 ? Math.round(G.gal / total * 100) : 0;
+    card.innerHTML =
+      '<div class="top-photo">' + kindIcon(kind, 44) + '</div>' +
+      '<div><div class="eyebrow">Using the most fuel · ' + RANGE_NAMES[filter] + '</div>' +
+      '<div class="top-name">' + esc(top) + '</div>' +
+      '<div class="top-sub"><b>' + pct + '%</b> of all fuel given out · <b>' + G.fills + '</b> fill-up' + (G.fills === 1 ? "" : "s") +
+        (T.avgMpg != null ? ' · avg <b>' + T.avgMpg + '</b> MPG' : "") + '</div>' +
+      (names.length > 1 ? '<div class="top-runners">Next: ' + names.slice(1, 3).map(function (n) { return esc(n) + " " + fmtGal(g[n].gal) + " gal"; }).join(" · ") + '</div>' : "") +
+      '</div>' +
+      '<div class="top-gal"><div class="hero-num">' + fmtGal(G.gal) + '<small>gal</small></div><div class="top-sub">tap for history</div></div>';
+    card.classList.remove("hidden");
+    if (info.code) {
+      var ph = card.querySelector(".top-photo"), img = new Image(); img.className = "ph"; img.alt = top;
+      img.onload = function () { if (ph.isConnected) { ph.innerHTML = ""; ph.appendChild(img); } };
+      img.src = "photos/" + encodeURIComponent(info.code) + ".jpg";
+    }
+    card.onclick = function () { detailTruck = top; setView("truck"); };
+  }
+
+  // Tapping a bar in "Gallons given out" lists what was filled up that day (or that week / month).
+  var dayPick = null;
+  function showDayPanel(B, fl, idx) {
+    var panel = $("dayPanel");
+    if (idx == null || !B || !B.keys[idx]) { dayPick = null; panel.classList.add("hidden"); return; }
+    var key = B.keys[idx]; dayPick = key;
+    var list = fl.filter(function (e) { return B.key(e.ts) === key; }).sort(function (a, b) { return tsNum(a.ts) - tsNum(b.ts); });
+    var fuel = 0, def = 0; list.forEach(function (e) { fuel += e.fuelGal || 0; def += e.defGal || 0; });
+    var d = new Date(key + "T12:00:00"), title;
+    if (B.mode === "month") title = d.toLocaleDateString("en-US", { month: "long", year: "numeric" });
+    else if (B.mode === "week") { var e2 = new Date(d); e2.setDate(e2.getDate() + 6); title = "Week of " + d.toLocaleDateString("en-US", { month: "short", day: "numeric" }) + " – " + e2.toLocaleDateString("en-US", { month: "short", day: "numeric" }); }
+    else title = d.toLocaleDateString("en-US", { weekday: "long", month: "short", day: "numeric" });
+    var showDate = B.mode !== "day";
+    var rows = list.map(function (e) {
+      var nm = canonTruck(e.truck), cans = e.kind === "Cans";
+      return '<tr><td style="white-space:nowrap">' + (showDate ? fmtDate(e.ts) + " " : "") + fmtTime(e.ts) + '</td>' +
+        '<td class="b" data-truck="' + esc(nm) + '">' + esc(nm) + (cans ? ' <span class="fleet-tag">cans</span>' : "") + '</td>' +
+        '<td>' + esc(canonDriver(e.driver) || "") + '</td>' +
+        '<td class="num">' + (e.fuelGal > 0 ? fmtGal(e.fuelGal) + ' ' + prodOf(e.fuelType) : dash()) + '</td>' +
+        '<td class="num">' + (e.defGal > 0 ? fmtGal(e.defGal) : dash()) + '</td>' +
+        '<td class="num">' + (e.odometer != null ? fmtInt(e.odometer) : (e.hours != null ? e.hours + " h" : dash())) + '</td></tr>';
+    }).join("");
+    panel.innerHTML =
+      '<div class="day-head"><div class="day-title">' + title + '<small>' + list.length + ' fill-up' + (list.length === 1 ? "" : "s") + ' · ' + fmtGal(fuel) + ' gal fuel' + (def > 0 ? ' · ' + fmtGal(def) + ' gal DEF' : "") + '</small></div>' +
+      '<button class="btn-gray" id="dayClose">Close</button></div>' +
+      (list.length ? '<div class="table-scroll"><table><thead><tr><th>Time</th><th>To</th><th>Driver</th><th class="num">Fuel</th><th class="num">DEF</th><th class="num">Odo / hrs</th></tr></thead><tbody>' + rows + '</tbody></table></div>'
+        : '<div class="empty">Nothing filled up then.</div>');
+    panel.classList.remove("hidden");
+    $("dayClose").onclick = function () { showDayPanel(null); };
+    panel.querySelectorAll("td[data-truck]").forEach(function (td) {
+      td.addEventListener("click", function () { var n = td.getAttribute("data-truck"); if (computeStats().byTruck[n]) { detailTruck = n; setView("truck"); } });
+    });
+  }
+
   function renderUsageChart(fl) {
     var B = fl.length ? makeBuckets(fl.map(function (e) { return e.ts; })) : null;
-    if (!B) { drawChart("usageChart", "usageCard", null); return; }
+    if (!B) { drawChart("usageChart", "usageCard", null); showDayPanel(null); return; }
     var sums = bucketSums(B, fl, function (e, add) { add(prodOf(e.fuelType), e.fuelGal); add("DEF", e.defGal); });
     var shown = PRODUCTS.filter(function (p) { return sums[p].some(function (v) { return v > 0; }); });
     $("usageLegend").innerHTML = legendHtml(shown.map(function (p) { return [p, PRODUCT_COLORS[p]]; }));
     $("usageNote").textContent = "by " + B.mode;
+    $("usageTapHint").textContent = "Tap a bar to see what was filled up that " + B.mode;
+    var keep = dayPick ? B.keys.indexOf(dayPick) : -1;
+    showDayPanel(B, fl, keep >= 0 ? keep : null);
     drawChart("usageChart", "usageCard", {
       type: "bar",
       data: { labels: B.labels, datasets: shown.map(function (p) { return barSet(p, sums[p], PRODUCT_COLORS[p]); }) },
       options: {
         responsive: true, maintainAspectRatio: false, interaction: { mode: "index", intersect: false },
+        onClick: function (evt, els) { if (els.length) { showDayPanel(B, fl, els[0].index); $("dayPanel").scrollIntoView({ behavior: "smooth", block: "nearest" }); } },
+        onHover: function (evt, els) { evt.native.target.style.cursor = els.length ? "pointer" : "default"; },
         plugins: { tooltip: { callbacks: { label: function (c) { return " " + c.dataset.label + ": " + fmtGal(c.parsed.y) + " gal"; }, footer: totalFooter("gal") } } },
         scales: { x: catAxis(true), y: galAxis(true) }
       }
