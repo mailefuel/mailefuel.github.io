@@ -665,7 +665,7 @@
       </div>
       <div class="pick-grid hidden" id="assetList" style="margin-top:14px;"></div>
       <div class="hidden" id="noLabelBox" style="margin-top:14px;">
-        <input class="input" id="inNoLabel" placeholder="Type what it is (e.g. Generator 2, Skid steer)" autocomplete="off" />
+        <input class="input" id="inNoLabel" placeholder="Scan the label here, or type what it is" autocomplete="off" />
         <button class="btn-big" id="btnNoLabelGo" style="width:100%; margin-top:10px;">Continue</button>
       </div>
     </div>
@@ -1590,6 +1590,8 @@
   });
   function noLabelGo() {
     var v = $("inNoLabel").value.trim(); if (!v) return;
+    // a label scanned into this box works too
+    var byCode = assetByCode(codeFromScan(v)); if (byCode) { $("inNoLabel").value = ""; selectAsset(byCode); return; }
     var name = bestMatch(v, truckNames());
     if (name) selectAsset(truckInfo(name));
     else selectAsset({ name: v, kind: "Equipment", fuelType: "Diesel", usesDef: false, driver: "", code: "" });
