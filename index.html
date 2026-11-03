@@ -282,6 +282,11 @@
   .chip { background: rgba(232,236,255,0.10); border: 1px solid rgba(226,231,250,0.40); color: var(--ink); border-radius: 999px; padding: 7px 10px 7px 14px; font-size: 14px; font-weight: 500; display: inline-flex; align-items: center; gap: 8px; }
   .chip .x { background: none; color: var(--ink3); font-size: 14px; font-weight: 700; padding: 0 4px; }
   .chip .x:active { color: var(--red); }
+  .chip .ren { background: none; color: var(--ink3); font-size: 15px; font-weight: 700; padding: 0 2px; }
+  .chip .ren:active { color: #FFFFFF; }
+  .fleet-ren { position: absolute; top: 10px; left: 10px; z-index: 2; width: 34px; height: 34px; border-radius: 50%; border: 1px solid rgba(255,255,255,0.5); background: rgba(20,30,70,0.6); color: #FFFFFF; display: flex; align-items: center; justify-content: center; font-size: 16px; cursor: pointer; }
+  .fleet-ren:active { transform: scale(.9); }
+  .fleet-grid.selecting .fleet-ren { display: none; }
   .manage-row { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; margin-bottom: 22px; }
   .manage-row .input { flex: 1 1 160px; }
   .manage-row .btn-gray { flex: 0 0 auto; padding: 12px 16px; }
@@ -845,7 +850,7 @@
     <div class="sync-line" id="syncStatus">Loading&hellip;</div>
 
     <div id="managePanel" class="card hidden">
-      <div class="sec-title">Trucks &amp; equipment &mdash; tap &#10005; to remove</div>
+      <div class="sec-title">Trucks &amp; equipment &mdash; tap &#9998; to rename, &#10005; to remove</div>
       <div class="chips" id="manageTrucks"></div>
       <div class="manage-row">
         <input class="input small" id="mgTruckName" placeholder="Name (e.g. Truck 12, Generator 2)" autocomplete="off" />
@@ -861,7 +866,7 @@
         <button class="btn-gray" id="btnRegister">&#128247; Scan registration</button>
       </div>
 
-      <div class="sec-title">Drivers &mdash; tap &#10005; to remove</div>
+      <div class="sec-title">Drivers &mdash; tap &#9998; to rename, &#10005; to remove</div>
       <div class="chips" id="manageDrivers"></div>
       <div class="manage-row">
         <input class="input small" id="mgDriverName" placeholder="Driver name" autocomplete="off" />
@@ -1278,6 +1283,8 @@
       else if (a === "removeTruck") resp = await sbRpc("admin_remove_asset", { p_pin: sessionPin, p_name: payload.name });
       else if (a === "addDriver") resp = await sbRpc("admin_add_driver", { p_pin: sessionPin, p_name: payload.name });
       else if (a === "removeDriver") resp = await sbRpc("admin_remove_driver", { p_pin: sessionPin, p_name: payload.name });
+      else if (a === "renameTruck") resp = await sbRpc("admin_rename_asset", { p_pin: sessionPin, p_old: payload.name, p_new: payload.newName });
+      else if (a === "renameDriver") resp = await sbRpc("admin_rename_driver", { p_pin: sessionPin, p_old: payload.name, p_new: payload.newName });
       else if (a === "import") resp = await sbRpc("admin_import", { p_pin: sessionPin, p_data: payload.data });
       else return null;
       if (a !== "delete") await fetchLists();
@@ -2081,6 +2088,7 @@
         img.onload = function () { ph.innerHTML = ""; ph.appendChild(img); ph.classList.add("has-photo"); };
         img.src = "photos/" + encodeURIComponent(t.code) + ".jpg";
       }
+      b.appendChild(renameBtn("fleet-ren", function () { if (!fleetSelecting) renameItem("truck", t.name); }));
       if (fleetPicked[t.code]) b.classList.add("picked");
       b.addEventListener("click", function () {
         if (fleetSelecting) { if (fleetPicked[t.code]) delete fleetPicked[t.code]; else fleetPicked[t.code] = 1; b.classList.toggle("picked", !!fleetPicked[t.code]); updateFleetPrint(); return; }
@@ -2658,6 +2666,7 @@
     trucks.forEach(function (t) {
       var c = document.createElement("span"); c.className = "chip";
       c.innerHTML = esc(t.name) + ' <span class="time">' + (t.kind === "Equipment" ? "equip \u00b7 " : "") + (t.fuelType === "Gas" ? "G" : "D") + (t.usesDef ? "+DEF" : "") + (t.driver ? " \u00b7 " + esc(t.driver) : "") + ' \u00b7 ' + esc(t.code) + '</span>';
+      c.appendChild(renameBtn("ren", function () { renameItem("truck", t.name); }));
       var x = document.createElement("button"); x.className = "x"; x.textContent = "\u2715";
       x.addEventListener("click", function () {
         if (!confirm("Remove " + t.name + " from the list? (Its history stays.)")) return;
@@ -2669,6 +2678,7 @@
     var md = $("manageDrivers"); md.innerHTML = "";
     drivers.forEach(function (d) {
       var c = document.createElement("span"); c.className = "chip"; c.textContent = d.name + " ";
+      c.appendChild(renameBtn("ren", function () { renameItem("driver", d.name); }));
       var x = document.createElement("button"); x.className = "x"; x.textContent = "\u2715";
       x.addEventListener("click", function () {
         if (!confirm("Remove " + d.name + " from the driver list?")) return;
@@ -2680,6 +2690,36 @@
     var sel = $("mgTruckDriver"); var cur = sel.value; sel.innerHTML = '<option value="">Usual driver (optional)</option>';
     drivers.forEach(function (d) { var o = document.createElement("option"); o.value = d.name; o.textContent = d.name; sel.appendChild(o); });
     sel.value = cur;
+  }
+  // Rename a truck/equipment or a driver. The barcode never changes, so printed labels keep scanning.
+  function renameBtn(cls, onTap) {
+    // on the truck cards (which are buttons themselves) it's a span acting as a button
+    var b = document.createElement(cls === "fleet-ren" ? "span" : "button"); b.className = cls;
+    if (cls === "fleet-ren") { b.setAttribute("role", "button"); b.tabIndex = 0; } else b.type = "button";
+    b.textContent = "\u270E"; b.title = "Rename"; b.setAttribute("aria-label", "Rename");
+    b.addEventListener("click", function (ev) { ev.stopPropagation(); onTap(); });
+    return b;
+  }
+  function renameItem(what, oldName) {
+    var isTruck = what === "truck";
+    var nn = prompt("New name for " + oldName + (isTruck ? "\n(the barcode stays the same, so its label still works)" : ""), oldName);
+    if (nn == null) return;
+    nn = nn.trim();
+    if (!nn || nn === oldName) return;
+    var list = isTruck ? trucks : drivers;
+    for (var i = 0; i < list.length; i++) if (list[i].name !== oldName && list[i].name.toLowerCase() === nn.toLowerCase()) { alert(nn + " is already in the list."); return; }
+    adminPost({ action: isTruck ? "renameTruck" : "renameDriver", name: oldName, newName: nn }).then(function (r) {
+      if (r && r.ok) {
+        if (isTruck && detailTruck === oldName) detailTruck = nn;
+        renderManage(); if (officeTab === "trucks") renderFleet();
+        fetchRemote();   // past fill-ups now carry the new name
+      } else {
+        var err = (r && r.error) || "";
+        if (/admin_rename_/.test(err)) alert("Renaming isn't set up yet \u2014 run supabase/rename.sql in the Supabase SQL Editor first.");
+        else if (/name taken/.test(err)) alert(nn + " is already used (it may be one that was removed earlier). Pick another name.");
+        else alert("Couldn't rename \u2014 check connection." + (err ? "\n" + err : ""));
+      }
+    });
   }
   $("mgAddTruck").addEventListener("click", function () {
     var name = $("mgTruckName").value.trim(); if (!name) return;
