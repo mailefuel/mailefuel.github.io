@@ -454,7 +454,7 @@
     .land-col .def-section { border-top: none; padding-top: 0; }
     .pin-card .key { padding: 14px; }
   }
-  /* ---------- motion everywhere (all switched off under prefers-reduced-motion below) ---------- */
+  /* ---------- motion everywhere (the shop asked for full motion, so the OS reduce-motion switch is ignored; html.calm turns it off) ---------- */
   /* the photo behind the glass drifts slowly, like VANTA's clouds */
   body::before { animation: drift 48s ease-in-out infinite alternate; will-change: transform; }
   @keyframes drift { 0% { transform: scale(1.04) translate(0, 0); } 50% { transform: scale(1.09) translate(-1.6%, -1%); } 100% { transform: scale(1.06) translate(1.4%, 0.8%); } }
@@ -543,7 +543,26 @@
   .scan-icon { position: relative; }
   @keyframes halo { 0% { transform: scale(.85); opacity: .9; } 100% { transform: scale(1.35); opacity: 0; } }
   @media print { .pre { opacity: 1 !important; transform: none !important; } main::after { display: none; } }
-  @media (prefers-reduced-motion: reduce) { *, *::before, *::after { animation: none !important; transition: none !important; } .pre { opacity: 1 !important; transform: none !important; } }
+  /* ---------- truck lists swipe in, card after card ---------- */
+  @keyframes swipeR { 0% { opacity: 0; transform: translateX(90px) skewX(-8deg) scale(.92); } 60% { opacity: 1; transform: translateX(-8px) skewX(2deg); } 100% { opacity: 1; transform: none; } }
+  @keyframes swipeL { 0% { opacity: 0; transform: translateX(-90px) skewX(8deg) scale(.92); } 60% { opacity: 1; transform: translateX(8px) skewX(-2deg); } 100% { opacity: 1; transform: none; } }
+  .swipe-r > * { animation: swipeR .6s var(--swoop) both !important; animation-delay: calc(min(var(--i, 0), 14) * 38ms) !important; }
+  .swipe-l > * { animation: swipeL .6s var(--swoop) both !important; animation-delay: calc(min(var(--i, 0), 14) * 38ms) !important; }
+  /* ---------- dark smoked-glass panels inside the big window ---------- */
+  .card, .hero-card, .tot-card, .fleet-card {
+    background: linear-gradient(180deg, rgba(14,20,46,0.64), rgba(10,14,36,0.56));
+    border-color: rgba(200,212,255,0.20);
+    box-shadow: inset 0 1px 0 rgba(255,255,255,0.08), 0 12px 32px rgba(5,8,25,0.35);
+  }
+  th { background: rgba(5,8,25,0.35); }
+  tbody tr:nth-child(even) td { background: rgba(5,8,25,0.18); }
+  tbody tr:hover td { background: rgba(232,236,255,0.08); }
+  /* the Office truck cards follow your finger when you swipe between All / Trucks / Equipment */
+  .fleet-grid { touch-action: pan-y; -webkit-user-select: none; user-select: none; }
+  .fleet-grid img { -webkit-user-drag: none; }
+  .fleet-grid.dragging { transition: none; }
+  .fleet-grid.snap { transition: transform .35s var(--spring), opacity .3s ease; }
+  html.calm *, html.calm *::before, html.calm *::after { animation: none !important; transition: none !important; } html.calm .pre { opacity: 1 !important; transform: none !important; }
 
   /* Labels (print) */
   .labels { display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: 14px; }
@@ -1331,18 +1350,22 @@
     $("tabReports").classList.toggle("active", v === "reports" || v === "pin" || v === "truck" || v === "labels" || v === "register");
     document.querySelector("main").classList.toggle("wide", v === "reports" || v === "truck");
     swoopIn($("view" + v.charAt(0).toUpperCase() + v.slice(1)));
-    if (v === "reports") { if (!lastSyncTime || Date.now() - lastSyncTime.getTime() > 5000) fetchRemote(); renderReports(); }
+    if (v === "reports") { if (!lastSyncTime || Date.now() - lastSyncTime.getTime() > 5000) fetchRemote(); renderReports(); swipeOffice(); }
     if (v === "truck") renderTruckDetail();
     if (v === "labels") renderLabels(); else if ($("labelPageSize")) $("labelPageSize").textContent = "";
     if (v === "register") renderRegister();
     if (v === "scan") resetScanScreen();
     if (v !== "fill" && v !== "scan") { if (document.activeElement && document.activeElement.blur) document.activeElement.blur(); }
     window.scrollTo(0, 0);
+    navPush(v);
   }
   // VANTA motion: the screen swoops in when a different one opens (wgIn in the CSS) and its big numbers count up.
   // A redraw a moment later (data arriving, a refresh) shows as it is instead of starting the animations over.
   var swoopAt = 0, swoopTimer = null, chartsAnimUntil = 0;
-  var lessMotion = window.matchMedia && matchMedia("(prefers-reduced-motion: reduce)").matches;
+  // Full motion even when Windows/Android "animation effects" are off; set localStorage fl3-calm=1 to calm it.
+  var lessMotion = false;
+  try { lessMotion = localStorage.getItem("fl3-calm") === "1"; } catch (e) {}
+  if (lessMotion) document.documentElement.classList.add("calm");
   function swoopIn(sec) {
     document.querySelectorAll("section.wgIn").forEach(function (x) { x.classList.remove("wgIn"); });
     if (!sec || lessMotion) return;
@@ -1481,6 +1504,8 @@
         list.appendChild(b);
       });
       if (!trucks.length) list.innerHTML = '<span class="hint left">No trucks in the list yet \u2014 add them under Reports \u2192 Manage.</span>';
+
+      else swipeIn(list, 1);
     }
   });
   $("btnNoLabel").addEventListener("click", function () {
@@ -1535,7 +1560,7 @@
     $("inOdo").value = ""; $("inHours").value = ""; $("inFuelGal").value = ""; $("inDefGal").value = ""; $("inCansGal").value = "";
     $("fillCansField").classList.toggle("hidden", !carriesCans(a));
     hideErr("fillError");
-    renderFuelButtons(); renderDriverLine(); renderForTruck(); updateOdoHint();
+    renderFuelButtons(); renderDriverLine(); renderForTruck(); swipeIn($("forTruckPick"), 1); updateOdoHint();
     if (!operator) openOperatorPick("fill"); else setView("fill");
     setTimeout(function () { var f = a.kind === "Truck" ? $("inOdo") : $("inFuelGal"); f.focus(); }, 50);
   }
@@ -1961,21 +1986,23 @@
 
   // ---------- Office: sub-tabs ----------
   var officeTab = "reports", fleetKind = "all";
+  function setOfficeTab(name) {
+    officeTab = name;
+    document.querySelectorAll(".otab").forEach(function (x) { x.classList.toggle("active", x.getAttribute("data-otab") === name); });
+    $("officeReports").classList.toggle("hidden", officeTab !== "reports");
+    $("officeTrucks").classList.toggle("hidden", officeTab !== "trucks");
+    chartsAnimUntil = Date.now() + 600;
+  }
   document.querySelectorAll(".otab").forEach(function (b) {
     b.addEventListener("click", function () {
-      officeTab = b.getAttribute("data-otab");
-      document.querySelectorAll(".otab").forEach(function (x) { x.classList.toggle("active", x === b); });
-      $("officeReports").classList.toggle("hidden", officeTab !== "reports");
-      $("officeTrucks").classList.toggle("hidden", officeTab !== "trucks");
-      chartsAnimUntil = Date.now() + 600;
-      renderReports(); swoopIn($("viewReports"));
+      setOfficeTab(b.getAttribute("data-otab"));
+      renderReports(); swoopIn($("viewReports")); swipeOffice(); navPush("reports");
     });
   });
   document.querySelectorAll(".fleet-btn").forEach(function (b) {
     b.addEventListener("click", function () {
-      fleetKind = b.getAttribute("data-kind");
-      document.querySelectorAll(".fleet-btn").forEach(function (x) { x.classList.toggle("active", x === b); });
-      renderFleet();
+      var k = b.getAttribute("data-kind");
+      setFleetKind(k, FLEET_KINDS.indexOf(k) < FLEET_KINDS.indexOf(fleetKind) ? -1 : 1);
     });
   });
   $("fleetSearch").addEventListener("input", function () { renderFleet(); });
@@ -2925,13 +2952,56 @@
     b.appendChild(s); setTimeout(function () { if (s.parentNode) s.parentNode.removeChild(s); }, 650);
   }, true);
   // Changing a filter or searching re-deals the truck cards and re-counts the numbers.
-  function fleetDeal() {
-    if (lessMotion) return;
-    var g = $("fleetGrid"); g.classList.remove("anim"); void g.offsetWidth; g.classList.add("anim");
-    clearTimeout(g._an); g._an = setTimeout(function () { g.classList.remove("anim"); }, 1100);
+  // Truck lists swipe in card after card; the direction follows where you came from.
+  function swipeIn(el, dir) {
+    if (lessMotion || !el || !el.children.length) return;
+    for (var i = 0; i < el.children.length; i++) el.children[i].style.setProperty("--i", i);
+    el.classList.remove("swipe-r", "swipe-l", "anim"); void el.offsetWidth;
+    el.classList.add(dir < 0 ? "swipe-l" : "swipe-r");
+    clearTimeout(el._sw); el._sw = setTimeout(function () { el.classList.remove("swipe-r", "swipe-l"); }, 1400);
   }
-  document.querySelectorAll(".fleet-btn").forEach(function (b) { b.addEventListener("click", fleetDeal); });
-  $("fleetSearch").addEventListener("input", function () { clearTimeout(fleetDeal._t); fleetDeal._t = setTimeout(fleetDeal, 120); });
+  // Opening Office swipes in whichever truck list is showing (cards or the table rows).
+  function swipeOffice() { swipeIn(officeTab === "trucks" ? $("fleetGrid") : $("truckBody"), 1); }
+  var FLEET_KINDS = ["all", "Truck", "Equipment"];
+  function setFleetKind(kind, dir) {
+    fleetKind = kind;
+    document.querySelectorAll(".fleet-btn").forEach(function (x) { x.classList.toggle("active", x.getAttribute("data-kind") === kind); });
+    renderFleet(); swipeIn($("fleetGrid"), dir);
+  }
+  $("fleetSearch").addEventListener("input", function () { clearTimeout(swipeIn._t); swipeIn._t = setTimeout(function () { swipeIn($("fleetGrid"), 1); }, 60); });
+  // Drag the Office truck cards sideways to flip between All / Trucks / Equipment.
+  (function () {
+    var g = $("fleetGrid"), x0 = 0, y0 = 0, dx = 0, on = false, drag = false, eat = false;
+    g.addEventListener("pointerdown", function (e) {
+      if (e.pointerType === "mouse" && e.button !== 0) return;
+      on = true; drag = false; dx = 0; x0 = e.clientX; y0 = e.clientY;
+    });
+    g.addEventListener("pointermove", function (e) {
+      if (!on) return;
+      dx = e.clientX - x0; var dy = e.clientY - y0;
+      if (!drag) {
+        if (Math.abs(dy) > 12 && Math.abs(dy) > Math.abs(dx)) { on = false; return; }
+        if (Math.abs(dx) < 14) return;
+        drag = true; g.classList.remove("snap"); g.classList.add("dragging");
+      }
+      if (!lessMotion) { g.style.transform = "translateX(" + dx * 0.6 + "px)"; g.style.opacity = String(Math.max(0.35, 1 - Math.abs(dx) / 500)); }
+    });
+    function end() {
+      if (!on) return; on = false;
+      g.classList.remove("dragging");
+      if (!drag) return;
+      eat = true; setTimeout(function () { eat = false; }, 60);
+      g.classList.add("snap"); g.style.transform = ""; g.style.opacity = "";
+      setTimeout(function () { g.classList.remove("snap"); }, 400);
+      if (Math.abs(dx) < 70) return;
+      var step = dx < 0 ? 1 : -1, n = FLEET_KINDS.indexOf(fleetKind) + step;
+      if (n < 0 || n >= FLEET_KINDS.length) return;
+      setFleetKind(FLEET_KINDS[n], step);
+    }
+    g.addEventListener("pointerup", end); g.addEventListener("pointercancel", end); g.addEventListener("pointerleave", end);
+    g.addEventListener("dragstart", function (e) { e.preventDefault(); });
+    g.addEventListener("click", function (e) { if (eat) { e.stopPropagation(); e.preventDefault(); } }, true);
+  })();
   document.querySelectorAll(".filter-btn[data-filter]").forEach(function (b) {
     b.addEventListener("click", function () { if (!lessMotion) countUp($("viewReports")); });
   });
@@ -2984,6 +3054,50 @@
     });
   }
 
+  // ---------- the device's own Back button ----------
+  // Every screen change is a step in the browser history, so the tablet's Back button (or a browser's back
+  // arrow) steps back through the app. Back on the Fill-Up home stays on Fill-Up instead of leaving the app.
+  // Office screens need the PIN again once you've backed out of them.
+  var navReady = false, navFromPop = false;
+  var NAV_PASSING = { pin: 1, operator: 1 };
+  var NAV_LOCKED = { reports: 1, truck: 1, labels: 1, register: 1 };
+  function navState(v) { return { v: v, otab: v === "reports" ? officeTab : "" }; }
+  function navPush(v) {
+    if (!navReady || navFromPop) return;
+    var st = history.state || {};
+    if (st.v === v && (st.otab || "") === navState(v).otab) return;
+    try {
+      // the PIN pad and the operator picker are passed through, so Back skips over them
+      if (NAV_PASSING[st.v] && !st.root) history.replaceState(navState(v), "");
+      else history.pushState(navState(v), "");
+    } catch (e) {}
+  }
+  function navStart() {
+    try { history.replaceState({ v: "scan", root: true }, ""); history.pushState({ v: "scan" }, ""); } catch (e) {}
+    navReady = true;
+  }
+  window.addEventListener("popstate", function (ev) {
+    var st = ev.state;
+    navFromPop = true;
+    try {
+      if (!st || st.root) {
+        selAsset = null; relock(); setView("scan");
+        navFromPop = false; try { history.pushState({ v: "scan" }, ""); } catch (e) {}
+        return;
+      }
+      var v = st.v;
+      if (NAV_LOCKED[v] && !unlocked) v = "scan";
+      if (!NAV_LOCKED[v] && v !== "pin" && unlocked) relock();
+      if (v === "pin") v = "scan";
+      if (v === "fill" && !selAsset) v = "scan";
+      if (v === "truck" && !detailTruck) v = "reports";
+      if (v === "operator") v = "scan";
+      if (v === "reports" && st.otab && st.otab !== officeTab) setOfficeTab(st.otab);
+      setView(v);
+      if (v !== st.v) { try { history.replaceState(navState(v), ""); } catch (e) {} }
+    } finally { navFromPop = false; }
+  });
+
   // ---------- Fill-Up is home ----------
   // The tablet always comes back to the Fill-Up scan screen: after 2 minutes with nobody touching it
   // (from any screen, and Reports locks again), and whenever the page is reopened or the tablet wakes up.
@@ -3005,6 +3119,7 @@
 
   // ---------- startup ----------
   (function init() {
+    navStart();
     $("setupWarn").classList.toggle("hidden", connected);
     try { var p = localGet(PENDING_KEY); if (p) pending = JSON.parse(p); } catch (e) { pending = []; }
     try {
