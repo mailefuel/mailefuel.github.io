@@ -135,6 +135,14 @@
   }
   .pick.sel { background: #FFFFFF; color: var(--navy); border-color: #FFFFFF; box-shadow: 0 6px 18px rgba(10,15,40,0.30); }
   .pick.other { color: var(--ink2); font-weight: 500; }
+  /* Pick from list: each truck shows its photo (or the truck/equipment picture) above its name */
+  .pick.pick-photo { padding: 0; display: flex; flex-direction: column; text-align: center; white-space: normal; }
+  .pp-img { display: flex; align-items: center; justify-content: center; height: 92px; background: rgba(10,15,40,0.35); border-bottom: 1px solid rgba(226,231,250,0.18); overflow: hidden; color: var(--ink2); }
+  .pp-img:not(.has-photo) > * { max-height: 60px; width: auto; opacity: .9; }
+  .pp-img.has-photo { background: #1b2340; }
+  .pp-img.has-photo img { width: 100%; height: 100%; object-fit: cover; display: block; transition: transform .6s var(--swoop); }
+  .pick-photo:hover .pp-img.has-photo img { transform: scale(1.07); }
+  .pp-name { padding: 10px 8px 11px; font-size: 15px; font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
   .fuel-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
   .fuel-btn { background: rgba(232,236,255,0.12); color: var(--ink2); border: 1px solid rgba(226,231,250,0.32); border-radius: 16px; padding: 17px 12px; font-size: 17px; font-weight: 700; }
   .fuel-btn.sel { background: #FFFFFF; color: var(--navy); border-color: #FFFFFF; box-shadow: 0 6px 18px rgba(10,15,40,0.30); }
@@ -529,7 +537,17 @@
   .fleet-card:hover .fleet-photo.has-photo img, .fleet-card.tilting .fleet-photo.has-photo img { transform: scale(1.08); }
   /* the operator strip and the scan target pulse softly so the eye goes there */
   .scan-card .scan-icon::after { content: ""; position: absolute; inset: -10px; border-radius: 38px; border: 2px solid rgba(120,170,255,0.55); animation: halo 2.6s ease-out infinite; }
-  .scan-icon { position: relative; }
+  .scan-icon { position: relative; overflow: visible; }
+  /* a red laser sweeps up and down over the barcode, like a scanner reading it */
+  .scan-bars { width: 62%; height: auto; fill: #FFFFFF; }
+  .scan-laser { position: absolute; left: 8%; right: 8%; top: 16%; height: 3px; border-radius: 3px; pointer-events: none;
+    background: linear-gradient(90deg, rgba(255,40,40,0), #FF2E2E 15%, #FF6B6B 50%, #FF2E2E 85%, rgba(255,40,40,0));
+    box-shadow: 0 0 6px 1px rgba(255,40,40,0.95), 0 0 18px 4px rgba(255,30,30,0.55), 0 0 36px 10px rgba(255,30,30,0.22);
+    animation: laser 1.8s ease-in-out infinite alternate; }
+  .scan-laser::after { content: ""; position: absolute; left: 0; right: 0; top: -12px; height: 27px;
+    background: linear-gradient(180deg, rgba(255,50,50,0), rgba(255,50,50,0.28) 50%, rgba(255,50,50,0)); }
+  @keyframes laser { 0% { top: 14%; } 100% { top: 84%; } }
+  .scan-card .scan-icon::after { border-color: rgba(255,90,90,0.55); }
   @keyframes halo { 0% { transform: scale(.85); opacity: .9; } 100% { transform: scale(1.35); opacity: 0; } }
   @media print { .pre { opacity: 1 !important; transform: none !important; } }
   /* ---------- truck lists swipe in, card after card ---------- */
@@ -615,7 +633,7 @@
     <div id="fillSaved" class="banner ok hidden"></div>
     <div class="card scan-card">
       <div class="scan-target">
-        <div class="scan-icon">&#9646;&#9646;&#9646;</div>
+        <div class="scan-icon"><svg class="scan-bars" viewBox="0 0 50 30" aria-hidden="true"><rect x="4" y="2" width="3" height="26" rx=".4"/><rect x="9" y="2" width="1.5" height="26" rx=".4"/><rect x="12.5" y="2" width="3" height="26" rx=".4"/><rect x="17.5" y="2" width="1.5" height="26" rx=".4"/><rect x="21" y="2" width="1.5" height="26" rx=".4"/><rect x="24.5" y="2" width="4" height="26" rx=".4"/><rect x="30.5" y="2" width="1.5" height="26" rx=".4"/><rect x="34" y="2" width="3" height="26" rx=".4"/><rect x="39" y="2" width="1.5" height="26" rx=".4"/><rect x="42.5" y="2" width="3" height="26" rx=".4"/></svg><span class="scan-laser"></span></div>
         <div class="scan-title">Scan the truck's label</div>
         <div class="scan-sub">Point the scanner at the barcode by the fuel cap</div>
       </div>
@@ -1488,7 +1506,14 @@
     if (open) {
       list.innerHTML = "";
       trucks.forEach(function (t) {
-        var b = document.createElement("button"); b.className = "pick"; b.textContent = t.name; b.title = t.name;
+        var b = document.createElement("button"); b.className = "pick pick-photo"; b.title = t.name;
+        b.innerHTML = '<span class="pp-img">' + kindIcon(t.kind, t.kind === "Truck" ? 40 : 52, true) + '</span><span class="pp-name">' + esc(t.name) + '</span>';
+        // same photos as Office > Trucks: photos/<barcode>.jpg, else the truck/equipment picture
+        if (t.code) {
+          var ph = b.querySelector(".pp-img"), img = new Image();
+          img.alt = ""; img.onload = function () { ph.innerHTML = ""; ph.appendChild(img); ph.classList.add("has-photo"); };
+          img.src = "photos/" + encodeURIComponent(t.code) + ".jpg";
+        }
         b.addEventListener("click", function () { selectAsset(t); });
         list.appendChild(b);
       });
