@@ -148,6 +148,17 @@
   }
   .pick.sel { background: #FFFFFF; color: var(--navy); border-color: #FFFFFF; box-shadow: 0 6px 18px rgba(10,15,40,0.30); }
   .pick.other { color: var(--ink2); font-weight: 500; }
+  /* Fuel cans filled: a tab on every truck's fill-up that opens the can gallons */
+  .cans-tab { width: 100%; display: flex; align-items: center; gap: 12px; padding: 16px 18px; border-radius: 16px; font-size: 17px; font-weight: 700; text-align: left;
+    background: rgba(232,236,255,0.10); border: 1px dashed rgba(226,231,250,0.55); color: var(--ink); transition: transform .2s var(--spring), background-color .2s ease, border-color .2s ease; }
+  .cans-tab:active { transform: scale(.97); }
+  .cans-tab.on { background: #FFFFFF; color: var(--navy); border-style: solid; border-color: #FFFFFF; }
+  .cans-tab .cans-chev { margin-left: auto; transition: transform .3s var(--spring); }
+  .cans-tab.on .cans-chev { transform: rotate(180deg); }
+  .cans-ico { width: 30px; height: 30px; flex: none; display: grid; place-items: center; }
+  .cans-ico svg, .cans-ico img { height: 26px !important; width: auto !important; margin: 0 !important; }
+  .cans-box { margin-top: 12px; padding: 16px; border-radius: 16px; background: rgba(5,8,25,0.28); border: 1px solid rgba(226,231,250,0.18); animation: pop .4s var(--spring) both; }
+  .cans-type { grid-template-columns: 1fr 1fr; }
   /* Pick from list: each truck shows its photo (or the truck/equipment picture) above its name */
   .pick.pick-photo { padding: 0; display: flex; flex-direction: column; text-align: center; white-space: normal; }
   .pp-img { display: flex; align-items: center; justify-content: center; height: 92px; background: rgba(10,15,40,0.35); border-bottom: 1px solid rgba(226,231,250,0.18); overflow: hidden; color: var(--ink2); }
@@ -725,9 +736,17 @@
       </div>
 
       <div class="field hidden" id="fillCansField">
-        <label class="label" for="inCansGal">Gas cans on this truck (optional)</label>
-        <input class="input" id="inCansGal" placeholder="0.0" inputmode="decimal" autocomplete="off" />
-        <div class="hint left">Gas put into the cans / jugs this truck carries. Saved as its own gas-can entry for this truck.</div>
+        <button type="button" class="cans-tab" id="btnCansTab" aria-expanded="false"><span class="cans-ico"></span><span>Fuel cans filled</span><span class="cans-chev">&#9662;</span></button>
+        <div class="cans-box hidden" id="cansBox">
+          <div class="label">What went in the cans?</div>
+          <div class="pick-grid cans-type" id="cansTypeGrid">
+            <button type="button" class="pick sel" data-cans="Gas">Gas</button>
+            <button type="button" class="pick" data-cans="Diesel">Diesel</button>
+          </div>
+          <label class="label" for="inCansGal" style="margin-top:14px">Gallons put in the cans</label>
+          <input class="input" id="inCansGal" placeholder="0.0" inputmode="decimal" autocomplete="off" />
+          <div class="hint left">For the small cans / jugs this truck carries for its equipment. Saved as its own can entry for this truck.</div>
+        </div>
       </div>
 
       <div id="fillError" class="banner err hidden"></div>
@@ -1635,7 +1654,7 @@
     $("fillHoursField").classList.toggle("hidden", a.kind !== "Equipment");
     $("defCol").classList.toggle("hidden", a.kind === "Cans" || (a.kind === "Equipment" && !a.usesDef));
     $("inOdo").value = ""; $("inHours").value = ""; $("inFuelGal").value = ""; $("inDefGal").value = ""; $("inCansGal").value = "";
-    $("fillCansField").classList.toggle("hidden", !carriesCans(a));
+    $("fillCansField").classList.toggle("hidden", !carriesCans(a)); setCansOpen(false); setCansType("Gas");
     hideErr("fillError");
     renderFuelButtons(); renderDriverLine(); renderForTruck(); swipeIn($("forTruckPick"), 1); updateOdoHint();
     if (!operator) openOperatorPick("fill"); else setView("fill");
@@ -1706,9 +1725,23 @@
   function hideErr(id) { $(id).classList.add("hidden"); }
   function num(v) { var n = parseFloat(String(v || "").replace(/,/g, "")); return isNaN(n) ? 0 : n; }
 
-  // Ford and Ram pickups carry gas cans for the small tools, so their fill-up also takes gas-can gallons.
-  // Matched by name: F250 / F550 / F19 ..., FORD ..., RAM ..., DODGE ...
-  function carriesCans(a) { return !!a && a.kind === "Truck" && /^(FORD|RAM|DODGE)\b|^F[-\s]?\d/i.test(String(a.name || "").trim()); }
+  // Work trucks carry small fuel cans for their equipment, so every truck's fill-up has a
+  // "Fuel cans filled" tab: pick Gas or Diesel and the gallons, saved as its own can entry for the truck.
+  function carriesCans(a) { return !!a && a.kind === "Truck"; }
+  var cansOpen = false, cansType = "Gas";
+  function setCansOpen(on) {
+    cansOpen = on;
+    $("btnCansTab").classList.toggle("on", on); $("btnCansTab").setAttribute("aria-expanded", on ? "true" : "false");
+    $("cansBox").classList.toggle("hidden", !on);
+    if (!on) $("inCansGal").value = "";
+  }
+  function setCansType(t) {
+    cansType = t;
+    document.querySelectorAll("#cansTypeGrid .pick").forEach(function (b) { b.classList.toggle("sel", b.getAttribute("data-cans") === t); });
+  }
+  $("btnCansTab").addEventListener("click", function () { setCansOpen(!cansOpen); if (cansOpen) setTimeout(function () { $("inCansGal").focus(); }, 80); });
+  document.querySelectorAll("#cansTypeGrid .pick").forEach(function (b) { b.addEventListener("click", function () { setCansType(b.getAttribute("data-cans")); }); });
+  document.querySelector("#btnCansTab .cans-ico").innerHTML = kindIcon("Cans", 26, true);
 
   $("btnSaveFill").addEventListener("click", async function () {
     if (!selAsset) return setView("scan");
@@ -1716,7 +1749,7 @@
     var driver = currentDriverName();
     var odo = num($("inOdo").value), hours = num($("inHours").value);
     var fuelGal = num($("inFuelGal").value), defGal = a.kind === "Cans" ? 0 : num($("inDefGal").value);
-    var cansGal = carriesCans(a) ? num($("inCansGal").value) : 0;
+    var cansGal = (carriesCans(a) && cansOpen) ? num($("inCansGal").value) : 0;
 
     if (a.kind === "Truck" && !driver) return showErr("fillError", "Pick the driver.");
     if (fuelGal <= 0 && defGal <= 0 && cansGal <= 0) return showErr("fillError", "Enter the gallons.");
@@ -1731,7 +1764,7 @@
     var parts = [], saveId = null;
     if (cansGal > 0) {
       var cans = { id: newId(), ts: new Date().toISOString(), truck: a.name, driver: driver || operator, odometer: null,
-        fuelType: "Gas", fuelGal: cansGal, defGal: 0, notes: "", kind: "Cans", hours: null, by: operator };
+        fuelType: cansType, fuelGal: cansGal, defGal: 0, notes: "", kind: "Cans", hours: null, by: operator };
       pending.push({ kind: "fillup", entry: cans }); savePending(); saveId = cans.id;
     }
     if (fuelGal > 0 || defGal > 0) {
@@ -1746,7 +1779,7 @@
     }
     if (fuelGal > 0) parts.push(fmtGal(fuelGal) + " gal " + fuelType);
     if (defGal > 0) parts.push(fmtGal(defGal) + " gal DEF");
-    if (cansGal > 0) parts.push(fmtGal(cansGal) + " gal Gas in cans");
+    if (cansGal > 0) parts.push(fmtGal(cansGal) + " gal " + cansType + " in cans");
     var desc = (a.kind === "Cans" ? "Cans" + (forTruck ? " for " + forTruck : "") : a.name) + " \u2014 " + parts.join(" + ");
     selAsset = null;
     setView("scan");
