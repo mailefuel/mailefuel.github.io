@@ -495,6 +495,18 @@
   /* first load: the bar slides down, the logo spins in, the window rises */
   header { animation: barIn .7s var(--swoop) both; }
   .logo { animation: logoIn .9s var(--spring) .15s both; }
+  /* the Maile logo sits on the seam between the top bar and the big window, like the bid tracker */
+  .bar { position: relative; }
+  .app-name { grid-column: 1; } .tabs { grid-column: 3; }
+  .logo { position: absolute; left: 50%; top: 100%; translate: -50% calc(-50% + var(--logo-gap, 26px)); z-index: 30; height: 92px; padding: 0; border-radius: 0; background: none;
+    box-shadow: none; filter: drop-shadow(0 6px 14px rgba(5,10,30,0.55)) drop-shadow(0 0 2px rgba(255,255,255,0.35)); }
+  main { margin-top: 26px; padding-top: 54px; }
+  @media (orientation: landscape) and (min-width: 900px) { .logo { height: 84px; --logo-gap: 22px; } main, main.wide { margin-top: 22px; padding-top: 50px; } }
+  @media (max-width: 700px) {
+    .logo { position: static; translate: none; height: 52px; justify-self: center; grid-column: 1 / -1; }
+    .app-name { grid-column: 1; } .tabs { grid-column: 2; }
+    main { margin-top: 12px; padding-top: 16px; }
+  }
   main { animation: winIn .8s var(--swoop) .1s both; }
   @keyframes barIn { from { transform: translateY(-100%); opacity: 0; } to { transform: none; opacity: 1; } }
   @keyframes logoIn { 0% { transform: scale(.3) rotate(-25deg); opacity: 0; } 70% { transform: scale(1.08) rotate(4deg); opacity: 1; } 100% { transform: none; } }
