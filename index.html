@@ -1483,7 +1483,7 @@
     });
     if (names.length) {
       var o = document.createElement("button"); o.className = "pick other"; o.textContent = "Other\u2026";
-      o.addEventListener("click", function () { other.classList.remove("hidden"); save.classList.remove("hidden"); other.focus(); });
+      o.addEventListener("click", function () { other.classList.remove("hidden"); save.classList.remove("hidden"); });
       grid.appendChild(o);
     }
     setView("operator");
@@ -1606,7 +1606,7 @@
     var box = $("noLabelBox"), open = box.classList.contains("hidden");
     $("assetList").classList.add("hidden"); $("btnPickList").classList.remove("active");
     box.classList.toggle("hidden", !open); $("btnNoLabel").classList.toggle("active", open);
-    if (open) { $("inNoLabel").value = ""; $("inNoLabel").focus(); }
+    if (open) { $("inNoLabel").value = ""; }
   });
   function noLabelGo() {
     var v = $("inNoLabel").value.trim(); if (!v) return;
@@ -1658,7 +1658,6 @@
     hideErr("fillError");
     renderFuelButtons(); renderDriverLine(); renderForTruck(); swipeIn($("forTruckPick"), 1); updateOdoHint();
     if (!operator) openOperatorPick("fill"); else setView("fill");
-    setTimeout(function () { var f = a.kind === "Truck" ? $("inOdo") : $("inFuelGal"); f.focus(); }, 50);
   }
   $("btnChangeAsset").addEventListener("click", function () { setView("scan"); });
 
@@ -1678,7 +1677,7 @@
       });
       if (names.length) {
         var o = document.createElement("button"); o.className = "pick other" + (driverOther ? " sel" : ""); o.textContent = "Other\u2026";
-        o.addEventListener("click", function () { driverOther = true; selDriver = ""; renderDriverLine(); other.focus(); });
+        o.addEventListener("click", function () { driverOther = true; selDriver = ""; renderDriverLine(); });
         grid.appendChild(o);
       }
     }
@@ -1739,7 +1738,7 @@
     cansType = t;
     document.querySelectorAll("#cansTypeGrid .pick").forEach(function (b) { b.classList.toggle("sel", b.getAttribute("data-cans") === t); });
   }
-  $("btnCansTab").addEventListener("click", function () { setCansOpen(!cansOpen); if (cansOpen) setTimeout(function () { $("inCansGal").focus(); }, 80); });
+  $("btnCansTab").addEventListener("click", function () { setCansOpen(!cansOpen); });
   document.querySelectorAll("#cansTypeGrid .pick").forEach(function (b) { b.addEventListener("click", function () { setCansType(b.getAttribute("data-cans")); }); });
   document.querySelector("#btnCansTab .cans-ico").innerHTML = kindIcon("Cans", 26, true);
 
@@ -3261,6 +3260,8 @@
   bumpIdle();
 
   // ---------- startup ----------
+  // The on-screen keyboard only opens when someone taps a box that needs typing: nothing in the app
+  // focuses a text box by itself, except the hidden scanner box, which has inputmode="none" (no keyboard).
   // ---------- full screen ----------
   // Browsers only allow full screen after a tap, so the first tap anywhere puts the app in full screen
   // (and again after it drops out), unless the button was used to leave it. Opened from the home-screen
