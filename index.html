@@ -1596,7 +1596,7 @@
   }
   function relock() {
     unlocked = false; sessionPin = ""; changingPin = false; newPinFirst = ""; pinInput = ""; regs = [];
-    svc = {}; svcLoaded = false; svcError = ""; vdCache = {}; docUrls = {};
+    svcError = ""; vdCache = {}; docUrls = {};
     if (typeof $ === "function" && $("maintForm")) { ["maintForm", "svcPlanForm", "docForm"].forEach(function (id) { $(id).classList.add("hidden"); }); document.querySelectorAll(".doc-view").forEach(function (x) { x.remove(); }); }
     hidePinError(); renderPinScreen();
   }
@@ -2295,32 +2295,35 @@
     });
     $("fleetCount").textContent = nT + (nT === 1 ? " truck" : " trucks") + " \u00b7 " + nE + " equipment";
     $("fleetCount").className = "sync-line";
-    var grid = $("fleetGrid"); grid.innerHTML = ""; fleetShown = list;
+    var grid = $("fleetGrid"); fleetShown = list;
     $("fleetEmpty").classList.toggle("hidden", list.length > 0);
-    list.forEach(function (t) {
-      var T = stats.byTruck[canonTruck(t.name)] || null, L = latest[normKey(t.name)] || {}, last = lastFillFor(t.name);
-      var lastTs = (last && last.ts) || L.ts, odo = (T && T.lastOdo != null) ? T.lastOdo : L.odometer;
-      var drv = t.driver || (last && last.driver) || L.driver || "";
+    var bodies = list.map(function (t) { return fleetBodyHtml(t, stats); });
+    // Same trucks in the same order as what's showing (e.g. data arriving a moment after Office opens):
+    // update the text on the cards in place, so photos don't flash back to icons and the cards don't swipe in twice.
+    var key = list.map(function (t) { return t.code + "|" + t.name + "|" + t.kind; }).join(",");
+    if (grid._key === key && grid.children.length === list.length) {
+      list.forEach(function (t, i) {
+        var b = grid.children[i], body = b.querySelector(".fleet-body");
+        if (body && body._html !== bodies[i]) { body.innerHTML = bodies[i]; body._html = bodies[i]; }
+        b.classList.toggle("picked", !!fleetPicked[t.code]);
+      });
+      return;
+    }
+    grid._key = key; grid.innerHTML = "";
+    list.forEach(function (t, i) {
       var b = document.createElement("button"); b.className = "fleet-card";
+      var known = t.code && FLEET_PHOTO[t.code] === 1, photoSrc = t.code ? "photos/" + encodeURIComponent(t.code) + ".jpg" : "";
       b.innerHTML =
-        '<div class="fleet-photo">' + kindIcon(t.kind, t.kind === "Truck" ? 62 : 70) + '</div><div class="fleet-check">\u2713</div>' +
-        '<div class="fleet-body"><div class="fleet-name">' + esc(t.name) + '</div>' +
-        '<div class="fleet-code">' + esc(t.code || "no barcode") + (svcOf(t).owner ? " \u00b7 " + esc(svcOf(t).owner) : "") + '</div>' +
-        '<div class="fleet-tags"><span class="fleet-tag">' + (t.kind === "Equipment" ? "Equipment" : "Truck") + '</span>' +
-        '<span class="fleet-tag" style="border-color:' + PRODUCT_COLORS[t.fuelType] + '">' + t.fuelType + '</span>' +
-        (t.usesDef ? '<span class="fleet-tag" style="border-color:' + PRODUCT_COLORS.DEF + '">DEF</span>' : "") + '</div>' + serviceBadge(t) +
-        '<div class="fleet-stats">' +
-          '<div>Driver<b>' + (drv ? esc(canonDriver(drv)) : dash()) + '</b></div>' +
-          '<div>Last fill<b>' + (lastTs ? fmtDate(lastTs) : dash()) + '</b></div>' +
-          '<div>' + (t.kind === "Truck" ? "Odometer" : "Fill-ups") + '<b>' + (t.kind === "Truck" ? (odo != null ? fmtInt(odo) : dash()) : (T ? T.fillups : 0)) + '</b></div>' +
-          '<div>' + (t.kind === "Truck" ? "Avg MPG" : "Fuel") + '<b>' + (t.kind === "Truck" ? (T && T.avgMpg != null ? T.avgMpg : dash()) : (T ? fmtGal(T.fuelGal) + " gal" : dash())) + '</b></div>' +
-        '</div></div>';
-      // the machine's own photo, if one is saved as photos/<barcode>.jpg next to this page
-      if (t.code) {
+        '<div class="fleet-photo' + (known ? " has-photo" : "") + '">' + (known ? '<img alt="' + esc(t.name) + '" src="' + photoSrc + '" />' : kindIcon(t.kind, t.kind === "Truck" ? 62 : 70)) + '</div><div class="fleet-check">\u2713</div>' +
+        '<div class="fleet-body">' + bodies[i] + '</div>';
+      b.querySelector(".fleet-body")._html = bodies[i];
+      // the machine's own photo, if one is saved as photos/<barcode>.jpg next to this page (checked once per visit)
+      if (t.code && FLEET_PHOTO[t.code] == null) {
         var ph = b.querySelector(".fleet-photo"), img = new Image();
         img.alt = t.name;
-        img.onload = function () { ph.innerHTML = ""; ph.appendChild(img); ph.classList.add("has-photo"); };
-        img.src = "photos/" + encodeURIComponent(t.code) + ".jpg";
+        img.onload = function () { FLEET_PHOTO[t.code] = 1; ph.innerHTML = ""; ph.appendChild(img); ph.classList.add("has-photo"); };
+        img.onerror = function () { FLEET_PHOTO[t.code] = 0; };
+        img.src = photoSrc;
       }
       b.appendChild(renameBtn("fleet-ren", function () { if (!fleetSelecting) renameItem("truck", t.name); }));
       if (fleetPicked[t.code]) b.classList.add("picked");
@@ -2330,6 +2333,23 @@
       });
       grid.appendChild(b);
     });
+  }
+  var FLEET_PHOTO = {};   // barcode -> 1 has a photo, 0 doesn't (so a redraw shows it straight away)
+  function fleetBodyHtml(t, stats) {
+      var T = stats.byTruck[canonTruck(t.name)] || null, L = latest[normKey(t.name)] || {}, last = lastFillFor(t.name);
+      var lastTs = (last && last.ts) || L.ts, odo = (T && T.lastOdo != null) ? T.lastOdo : L.odometer;
+      var drv = t.driver || (last && last.driver) || L.driver || "";
+      return '<div class="fleet-name">' + esc(t.name) + '</div>' +
+        '<div class="fleet-code">' + esc(t.code || "no barcode") + (svcOf(t).owner ? " \u00b7 " + esc(svcOf(t).owner) : "") + '</div>' +
+        '<div class="fleet-tags"><span class="fleet-tag">' + (t.kind === "Equipment" ? "Equipment" : "Truck") + '</span>' +
+        '<span class="fleet-tag" style="border-color:' + PRODUCT_COLORS[t.fuelType] + '">' + t.fuelType + '</span>' +
+        (t.usesDef ? '<span class="fleet-tag" style="border-color:' + PRODUCT_COLORS.DEF + '">DEF</span>' : "") + '</div>' + serviceBadge(t) +
+        '<div class="fleet-stats">' +
+          '<div>Driver<b>' + (drv ? esc(canonDriver(drv)) : dash()) + '</b></div>' +
+          '<div>Last fill<b>' + (lastTs ? fmtDate(lastTs) : dash()) + '</b></div>' +
+          '<div>' + (t.kind === "Truck" ? "Odometer" : "Fill-ups") + '<b>' + (t.kind === "Truck" ? (odo != null ? fmtInt(odo) : dash()) : (T ? T.fillups : 0)) + '</b></div>' +
+          '<div>' + (t.kind === "Truck" ? "Avg MPG" : "Fuel") + '<b>' + (t.kind === "Truck" ? (T && T.avgMpg != null ? T.avgMpg : dash()) : (T ? fmtGal(T.fuelGal) + " gal" : dash())) + '</b></div>' +
+        '</div>';
   }
 
   function renderAll() {
@@ -3004,7 +3024,7 @@
   }
   // badge for the truck cards on Office > Trucks
   function serviceBadge(t) {
-    if (!svcLoaded) return "";
+    if (!svcLoaded) return svcError ? "" : '<div class="fleet-svc" style="visibility:hidden">&#128295; \u2026</div>';   // keeps the card's height while it loads
     var R = serviceEstimate(t);
     if (!R.plan.every_miles && !R.plan.every_hours && !R.plan.every_months) return '<div class="fleet-svc">&#128295; Set service interval</div>';
     if (!R.last) return '<div class="fleet-svc soon">&#128295; Log last service</div>';
