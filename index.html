@@ -3850,11 +3850,14 @@
   });
 
   // ---------- Fill-Up is home ----------
-  // The tablet always comes back to the Fill-Up scan screen: after 2 minutes with nobody touching it
-  // (from any screen, and Reports locks again), and whenever the page is reopened or the tablet wakes up.
+  // The tablet comes back to the Fill-Up scan screen after 2 minutes with nobody touching it, and whenever
+  // the page is reopened or the tablet wakes up. Office (Reports, Trucks, a truck's page, labels, registrations)
+  // is the exception: once the PIN is in, it stays open as long as you like, until you leave Office yourself.
   var IDLE_MS = 2 * 60 * 1000, idleTimer = null;
+  var OFFICE_STAYS = { reports: 1, truck: 1, labels: 1, register: 1 };
   function goHome() {
     if (view === "scan" || view === "operator") return;
+    if (OFFICE_STAYS[view] && unlocked) return;
     selAsset = null; relock(); setView("scan");
   }
   function bumpIdle() { clearTimeout(idleTimer); idleTimer = setTimeout(goHome, IDLE_MS); }
