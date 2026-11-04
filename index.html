@@ -625,6 +625,53 @@
     .labels.four6 .lbl { border: 0; margin: 0; page-break-after: always; break-after: page; }
     .labels.four6 .lbl:last-child { page-break-after: auto; break-after: auto; }
   }
+
+  /* ---------- vehicle page: next service, maintenance log, documents ---------- */
+  .svc-top { display: flex; align-items: flex-end; justify-content: space-between; gap: 16px; flex-wrap: wrap; }
+  .svc-num { font-size: 44px; font-weight: 300; letter-spacing: -0.02em; line-height: 1; }
+  .svc-num small { font-size: 16px; font-weight: 500; color: var(--ink2); margin-left: 6px; }
+  .svc-sub { font-size: 14px; color: var(--ink2); margin-top: 6px; }
+  .svc-state { font-size: 12.5px; font-weight: 700; padding: 6px 12px; border-radius: 999px; border: 1px solid var(--edge); background: rgba(255,255,255,0.10); white-space: nowrap; }
+  .svc-state.ok { color: var(--green); border-color: rgba(166,243,194,0.6); background: var(--green2); }
+  .svc-state.soon { color: var(--amber); border-color: rgba(255,217,138,0.6); background: var(--amber2); }
+  .svc-state.due { color: var(--red); border-color: rgba(255,192,178,0.7); background: var(--red2); }
+  .svc-bar { height: 12px; border-radius: 999px; background: rgba(232,236,255,0.14); overflow: hidden; margin: 16px 0 10px; }
+  .svc-bar i { display: block; height: 100%; border-radius: 999px; background: var(--green); transform-origin: left center; animation: growX .9s var(--swoop, ease) both; }
+  .svc-bar.soon i { background: var(--amber); } .svc-bar.due i { background: var(--red); }
+  @keyframes growX { from { transform: scaleX(0); } to { transform: scaleX(1); } }
+  .svc-how { font-size: 13px; color: var(--ink3); line-height: 1.5; }
+  .svc-how b { color: var(--ink2); font-weight: 600; }
+  .svc-form { margin-top: 16px; padding: 16px; border-radius: 16px; background: rgba(5,8,25,0.28); border: 1px solid rgba(226,231,250,0.18); animation: pop .4s var(--spring) both; }
+  .svc-form .grid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 12px; }
+  .svc-form .grid.g3 { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+  .svc-form .label { font-size: 12px; margin-bottom: 6px; }
+  .svc-form .row-btns { display: flex; gap: 8px; justify-content: flex-end; margin-top: 14px; flex-wrap: wrap; }
+  @media (max-width: 640px) { .svc-form .grid, .svc-form .grid.g3 { grid-template-columns: 1fr 1fr; } }
+  .maint-item { display: grid; grid-template-columns: auto 1fr auto; gap: 4px 14px; align-items: start; padding: 12px 0; border-top: 1px solid var(--line2); cursor: pointer; }
+  .maint-item:first-child { border-top: none; }
+  .maint-date { font-size: 13px; font-weight: 700; color: var(--ink2); min-width: 74px; }
+  .maint-work { font-size: 15.5px; font-weight: 600; }
+  .maint-meta { font-size: 12.5px; color: var(--ink3); margin-top: 2px; }
+  .maint-clip { font-size: 12px; color: var(--blue); margin-top: 4px; display: inline-flex; gap: 4px; align-items: center; }
+  .doc-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(120px, 1fr)); gap: 12px; }
+  .doc-tile { position: relative; text-align: left; padding: 0; border-radius: 14px; overflow: hidden; background: rgba(5,8,25,0.28); border: 1px solid rgba(226,231,250,0.22); color: var(--ink); transition: transform .25s var(--spring); }
+  .doc-tile:hover { transform: translateY(-3px); } .doc-tile:active { transform: scale(.96); }
+  .doc-thumb { height: 92px; display: flex; align-items: center; justify-content: center; background: rgba(255,255,255,0.06); font-size: 15px; font-weight: 800; letter-spacing: .08em; color: var(--ink2); }
+  .doc-thumb img { width: 100%; height: 100%; object-fit: cover; }
+  .doc-cap { padding: 8px 10px; }
+  .doc-type { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: .06em; color: var(--ink3); }
+  .doc-title { font-size: 13px; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .doc-del { position: absolute; top: 6px; right: 6px; width: 28px; height: 28px; border-radius: 50%; background: rgba(10,15,40,0.65); color: #FFFFFF; font-size: 13px; font-weight: 700; display: grid; place-items: center; }
+  .doc-del.sure { width: auto; padding: 0 10px; border-radius: 999px; background: rgba(160,30,10,0.85); font-size: 11.5px; }
+  .reg-line { font-size: 13px; color: var(--ink2); margin-bottom: 12px; line-height: 1.5; }
+  .reg-line .exp-bad { color: var(--red); font-weight: 700; } .reg-line .exp-soon { color: var(--amber); font-weight: 700; }
+  .fleet-svc { margin: 8px 0 10px; font-size: 12px; font-weight: 700; padding: 4px 10px; border-radius: 999px; display: inline-block; border: 1px solid var(--edge); color: var(--ink2); }
+  .fleet-svc.ok { color: var(--green); border-color: rgba(166,243,194,0.55); }
+  .fleet-svc.soon { color: var(--amber); border-color: rgba(255,217,138,0.6); background: var(--amber2); }
+  .fleet-svc.due { color: var(--red); border-color: rgba(255,192,178,0.7); background: var(--red2); }
+  .doc-view { position: fixed; inset: 0; z-index: 60; background: rgba(5,8,25,0.88); display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 20px; animation: pop .3s var(--spring) both; }
+  .doc-view img { max-width: 100%; max-height: calc(100vh - 110px); border-radius: 12px; box-shadow: 0 20px 60px rgba(0,0,0,0.5); }
+  .doc-view .row-btns { display: flex; gap: 10px; margin-top: 14px; }
 </style>
 </head>
 <body>
@@ -994,12 +1041,68 @@
 
   <!-- ============ TRUCK DETAIL ============ -->
   <section id="viewTruck" class="hidden">
-    <button class="btn-gray" id="btnBackReports" style="margin-bottom:12px;">&larr; Back to reports</button>
+    <button class="btn-gray" id="btnBackReports" style="margin-bottom:12px;">&larr; Back</button>
     <div class="truck-head">
       <div class="truck-name" id="tdName"></div>
       <div class="hint left" id="tdSub" style="margin-top:2px;"></div>
     </div>
     <div class="totals" id="tdCards"></div>
+
+    <!-- maintenance + documents (PIN-checked, loaded per truck) -->
+    <div class="chart-grid" id="tdMaint">
+      <div class="card span2" id="svcCard">
+        <div class="chart-head"><div class="sec-title">Next service</div><button class="btn-gray" id="btnSvcPlan">Set interval</button></div>
+        <div id="svcBody"></div>
+        <div class="svc-form hidden" id="svcPlanForm">
+          <div class="grid">
+            <div><label class="label" for="spMiles">Every (miles)</label><input class="input small" id="spMiles" type="tel" inputmode="numeric" placeholder="e.g. 5000" autocomplete="off" /></div>
+            <div><label class="label" for="spHours">Every (engine hours)</label><input class="input small" id="spHours" type="tel" inputmode="numeric" placeholder="e.g. 250" autocomplete="off" /></div>
+            <div><label class="label" for="spMonths">Or every (months)</label><input class="input small" id="spMonths" type="tel" inputmode="numeric" placeholder="e.g. 6" autocomplete="off" /></div>
+            <div><label class="label" for="spTank">Miles per full tank</label><input class="input small" id="spTank" type="tel" inputmode="numeric" placeholder="e.g. 300" autocomplete="off" /></div>
+          </div>
+          <div class="hint left">Whichever comes first counts. Miles per tank is used when drivers don&rsquo;t enter the odometer: each fill-up counts as one tank.</div>
+          <div id="spErr" class="banner err hidden" style="margin:12px 0 0;"></div>
+          <div class="row-btns"><button class="btn-gray" id="btnSpCancel">Cancel</button><button class="btn-export" id="btnSpSave">Save interval</button></div>
+        </div>
+      </div>
+
+      <div class="card" id="maintCard">
+        <div class="chart-head"><div class="sec-title">Maintenance history</div><button class="btn-export" id="btnMaintAdd">+ Log service</button></div>
+        <div class="svc-form hidden" id="maintForm" style="margin:0 0 14px;">
+          <div class="grid g3">
+            <div><label class="label" for="mfDate">Date done</label><input class="input small" id="mfDate" type="date" /></div>
+            <div><label class="label" for="mfWork">Work done</label>
+              <select class="input small" id="mfWork"><option>Oil change</option><option>Oil &amp; filters</option><option>Tires</option><option>Brakes</option><option>DEF / emissions</option><option>Inspection</option><option>Repair</option><option>Other</option></select></div>
+            <div><label class="label" for="mfOdo" id="mfOdoLabel">Odometer</label><input class="input small" id="mfOdo" type="tel" inputmode="numeric" autocomplete="off" /></div>
+            <div><label class="label" for="mfCost">Cost ($)</label><input class="input small" id="mfCost" type="tel" inputmode="decimal" autocomplete="off" /></div>
+            <div><label class="label" for="mfVendor">Shop / done by</label><input class="input small" id="mfVendor" autocomplete="off" /></div>
+            <div><label class="label" for="mfFile">Receipt (optional)</label><button class="btn-gray" id="btnMfFile" style="width:100%;">&#128206; Attach</button><input type="file" id="mfFile" accept="image/*,application/pdf" class="hidden" /></div>
+          </div>
+          <div style="margin-top:12px;"><label class="label" for="mfNotes">Notes</label><input class="input small" id="mfNotes" placeholder="e.g. 15W-40, replaced fuel filter" autocomplete="off" /></div>
+          <div id="mfErr" class="banner err hidden" style="margin:12px 0 0;"></div>
+          <div class="row-btns"><button class="btn-gray hidden" id="btnMfDelete">Delete</button><button class="btn-gray" id="btnMfCancel">Cancel</button><button class="btn-export" id="btnMfSave">Save service</button></div>
+        </div>
+        <div id="maintList"></div>
+      </div>
+
+      <div class="card" id="docsCard">
+        <div class="chart-head"><div class="sec-title">Documents</div><button class="btn-export" id="btnDocAdd">+ Upload</button></div>
+        <div class="svc-form hidden" id="docForm" style="margin:0 0 14px;">
+          <div class="grid g3" style="grid-template-columns: minmax(0,1fr) minmax(0,2fr);">
+            <div><label class="label" for="dfType">Type</label>
+              <select class="input small" id="dfType"><option>Registration</option><option>Receipt</option><option>Insurance</option><option>Inspection</option><option>Title</option><option>Other</option></select></div>
+            <div><label class="label" for="dfTitle">Name (optional)</label><input class="input small" id="dfTitle" placeholder="e.g. 2026 registration" autocomplete="off" /></div>
+          </div>
+          <input type="file" id="dfFile" accept="image/*,application/pdf" class="hidden" />
+          <div id="dfStatus" class="banner hidden" style="margin:12px 0 0;"></div>
+          <div class="row-btns"><button class="btn-gray" id="btnDfCancel">Cancel</button><button class="btn-export" id="btnDfPick">&#128247; Photo or file</button></div>
+        </div>
+        <div class="reg-line" id="regLine"></div>
+        <div class="doc-grid" id="docGrid"></div>
+        <div class="hint left" id="docEmpty"></div>
+      </div>
+    </div>
+
     <div class="chart-grid">
       <div class="card chart-card" id="tdChartCard">
         <div class="chart-head"><div class="sec-title">MPG per fill-up</div><div class="big" id="tdMpgBig"></div></div>
@@ -1367,6 +1470,8 @@
         var d = await sbRpc("report_data", { p_pin: sessionPin });
         fillups = (d.fillups || []).map(rowToFillup);
         loads = (d.loads || []).map(rowToLoad);
+        await fetchService();
+        if (view === "truck" && vdCode()) loadVehicleDetail(vdCode(), true);
         var ids = {};
         fillups.concat(loads).forEach(function (e) { ids[e.id] = 1; });
         pending = pending.filter(function (p) { return !ids[p.entry.id]; });
@@ -1452,6 +1557,8 @@
   }
   function relock() {
     unlocked = false; sessionPin = ""; changingPin = false; newPinFirst = ""; pinInput = ""; regs = [];
+    svc = {}; svcLoaded = false; svcError = ""; vdCache = {}; docUrls = {};
+    if (typeof $ === "function" && $("maintForm")) { ["maintForm", "svcPlanForm", "docForm"].forEach(function (id) { $(id).classList.add("hidden"); }); document.querySelectorAll(".doc-view").forEach(function (x) { x.remove(); }); }
     hidePinError(); renderPinScreen();
   }
   $("tabScan").addEventListener("click", function () { relock(); setView("scan"); });
@@ -2162,7 +2269,7 @@
         '<div class="fleet-code">' + esc(t.code || "no barcode") + '</div>' +
         '<div class="fleet-tags"><span class="fleet-tag">' + (t.kind === "Equipment" ? "Equipment" : "Truck") + '</span>' +
         '<span class="fleet-tag" style="border-color:' + PRODUCT_COLORS[t.fuelType] + '">' + t.fuelType + '</span>' +
-        (t.usesDef ? '<span class="fleet-tag" style="border-color:' + PRODUCT_COLORS.DEF + '">DEF</span>' : "") + '</div>' +
+        (t.usesDef ? '<span class="fleet-tag" style="border-color:' + PRODUCT_COLORS.DEF + '">DEF</span>' : "") + '</div>' + serviceBadge(t) +
         '<div class="fleet-stats">' +
           '<div>Driver<b>' + (drv ? esc(canonDriver(drv)) : dash()) + '</b></div>' +
           '<div>Last fill<b>' + (lastTs ? fmtDate(lastTs) : dash()) + '</b></div>' +
@@ -2180,9 +2287,8 @@
       if (fleetPicked[t.code]) b.classList.add("picked");
       b.addEventListener("click", function () {
         if (fleetSelecting) { if (fleetPicked[t.code]) delete fleetPicked[t.code]; else fleetPicked[t.code] = 1; b.classList.toggle("picked", !!fleetPicked[t.code]); updateFleetPrint(); return; }
-        if (T) { detailTruck = canonTruck(t.name); setView("truck"); }
+        detailTruck = t.name; setView("truck");
       });
-      if (!T) b.classList.add("no-hist");
       grid.appendChild(b);
     });
   }
@@ -2712,8 +2818,15 @@
   // ---------- truck / equipment detail ----------
   function renderTruckDetail() {
     var stats = computeStats(), T = stats.byTruck[detailTruck];
-    if (!T) { setView("reports"); return; }
+    if (!T) {
+      // a truck with no fill-ups yet still has a page (maintenance + documents)
+      var ti = truckInfo(detailTruck);
+      if (!ti) { setView("reports"); return; }
+      T = { name: ti.name, kind: ti.kind, fillups: 0, fuelGal: 0, cansGal: 0, defGal: 0, mpgs: [], miles: 0, lastOdo: null, lastTs: null, flags: 0, fuelType: ti.fuelType, drivers: {}, avgMpg: null };
+    }
     var info = truckInfo(T.name);
+    if (info) loadVehicleDetail(info.code);
+    renderVehicleExtras();
     $("tdName").innerHTML = kindIcon(T.kind, 46, true) + esc(T.name);
     var drv = Object.keys(T.drivers);
     $("tdSub").textContent = kindLabel(T.kind) + " \u00b7 " + (info ? info.fuelType + (info.usesDef ? " \u00b7 uses DEF" : "") + (info.code ? " \u00b7 " + info.code : "") : T.fuelType) + (drv.length ? " \u00b7 drivers: " + drv.join(", ") : "");
@@ -2747,6 +2860,393 @@
     });
     afterRedraw($("viewTruck"));
   }
+
+  // ---------- maintenance + documents (Office > tap a truck) ----------
+  // Service plans and last services come from admin_fleet_service, one truck's history and documents from
+  // admin_vehicle_detail; both need the PIN. Files go through the vehicle-docs Edge Function, which checks the
+  // PIN too and hands back links that expire after an hour. Nothing here is readable with the tablet's anon key.
+  var svc = {}, svcLoaded = false, svcError = "";
+  var vdCache = {}, vdLoading = {}, docUrls = {}, maintEditId = null, maintFile = null, docDelKey = null, docDelTimer = null;
+  var FORD_RAM = /\b(FORD|RAM|DODGE)\b|^F-?\d{2,3}\b/i;   // the Fords (F250, F550, F750 ...) and the Ram
+  var FORD_RAM_MILES_PER_TANK = 300;
+
+  async function fetchService() {
+    try {
+      var rows = (await sbRpc("admin_fleet_service", { p_pin: sessionPin })) || [];
+      svc = {}; rows.forEach(function (r) { svc[r.code] = r; });
+      svcLoaded = true; svcError = "";
+    } catch (e) {
+      var m = String(e && e.message || e);
+      svcError = /admin_fleet_service|function|schema cache/i.test(m) ? "setup" : m;
+    }
+  }
+  function svcOf(t) { return (t && t.code && svc[t.code]) || {}; }
+  function defaultMilesPerTank(t) {
+    var s = svcOf(t);
+    return t && t.kind === "Truck" && FORD_RAM.test(t.name + " " + (s.make || "") + " " + (s.model || "")) ? FORD_RAM_MILES_PER_TANK : null;
+  }
+  function dayEnd(d) { var x = new Date(String(d).slice(0, 10) + "T23:59:59"); return x.getTime(); }
+  function parseDay(d) { return new Date(String(d).slice(0, 10) + "T12:00:00"); }
+  function fmtDay(d) { var x = parseDay(d); return isNaN(x.getTime()) ? "" : x.toLocaleDateString("en-US"); }
+  function addMonths(d, n) { var x = parseDay(d); x.setMonth(x.getMonth() + Number(n)); return x; }
+  function todayYmd() { return ymd(new Date()); }
+
+  // Estimate where a truck is against its service interval.
+  // Miles since the last service come from the odometer when drivers enter it; fill-ups logged without an
+  // odometer count as one full tank each (300 miles for the Fords and the Ram unless the office sets another number).
+  function serviceEstimate(t) {
+    var s = svcOf(t), last = s.last || null, isTruck = t.kind === "Truck";
+    var mpt = s.miles_per_tank != null ? Number(s.miles_per_tank) : defaultMilesPerTank(t);
+    var key = canonTruck(t.name);
+    var fills = allFillups().filter(function (e) { return e.kind !== "Cans" && canonTruck(e.truck) === key; })
+      .sort(function (a, b) { return tsNum(a.ts) - tsNum(b.ts); });
+    var R = { plan: s, last: last, mpt: mpt, mptDefault: s.miles_per_tank == null && mpt != null, fills: fills, parts: [], state: "none" };
+
+    // current odometer: last reading, plus a tank's worth for each fill after it
+    var lastOdoIdx = -1;
+    for (var i = fills.length - 1; i >= 0; i--) if (fills[i].odometer > 0) { lastOdoIdx = i; break; }
+    if (lastOdoIdx < 0) { var L = latest[normKey(t.name)]; if (L && L.odometer > 0) R.odoReading = { odometer: L.odometer, ts: L.odoTs }; }
+    else R.odoReading = fills[lastOdoIdx];
+    var after = lastOdoIdx >= 0 ? fills.length - 1 - lastOdoIdx : 0;
+    if (R.odoReading) { R.fillsAfterOdo = mpt ? after : 0; R.curOdo = R.odoReading.odometer + (mpt ? after * mpt : 0); }
+    var hrs = null; for (var j = fills.length - 1; j >= 0; j--) if (fills[j].hours > 0) { hrs = fills[j]; break; }
+    R.hoursReading = hrs;
+
+    if (!last) return R;
+    var since = fills.filter(function (e) { return tsNum(e.ts) > dayEnd(last.done_on); });
+    R.since = since;
+    if (isTruck) {
+      var odoAfter = R.odoReading && tsNum(R.odoReading.ts) > dayEnd(last.done_on);
+      if (last.odometer > 0 && odoAfter) {
+        R.milesSince = Math.max(0, Math.round(R.curOdo - last.odometer));
+        R.milesHow = R.fillsAfterOdo ? "odo+fills" : "odo";
+      } else if (mpt) { R.milesSince = since.length * mpt; R.milesHow = "fills"; }
+      else {
+        var T = computeStats().byTruck[key];
+        if (T && T.avgMpg) { var g = 0; since.forEach(function (e) { g += e.fuelGal || 0; }); R.milesSince = Math.round(g * T.avgMpg); R.milesHow = "mpg"; R.avgMpg = T.avgMpg; }
+      }
+    }
+    if (last.hours > 0 && hrs && tsNum(hrs.ts) > dayEnd(last.done_on)) R.hoursSince = Math.max(0, Math.round(hrs.hours - last.hours));
+
+    var every = s.every_miles, everyH = s.every_hours, everyM = s.every_months;
+    if (every && R.milesSince != null) R.parts.push({ unit: "mi", every: every, used: R.milesSince, left: every - R.milesSince, dueAt: last.odometer > 0 ? Number(last.odometer) + every : null });
+    if (everyH && R.hoursSince != null) R.parts.push({ unit: "hr", every: everyH, used: R.hoursSince, left: everyH - R.hoursSince, dueAt: last.hours > 0 ? Number(last.hours) + everyH : null });
+    if (everyM) {
+      var due = addMonths(last.done_on, everyM), totalDays = (due - parseDay(last.done_on)) / 864e5, leftDays = Math.round((due - new Date()) / 864e5);
+      R.dueDate = due; R.parts.push({ unit: "days", every: totalDays, used: totalDays - leftDays, left: leftDays });
+    }
+    if (!R.parts.length) return R;
+    R.parts.forEach(function (p) { p.pct = p.every > 0 ? p.used / p.every : 0; });
+    R.main = R.parts.slice().sort(function (a, b) { return b.pct - a.pct; })[0];
+    R.state = R.parts.some(function (p) { return p.left <= 0; }) ? "due"
+      : R.parts.some(function (p) { return p.pct >= 0.9 || (p.unit === "days" && p.left <= 14); }) ? "soon" : "ok";
+    return R;
+  }
+  function leftText(p, short) {
+    if (p.unit === "days") {
+      if (p.left <= 0) return p.left === 0 ? "due today" : "overdue " + (-p.left) + (-p.left === 1 ? " day" : " days");
+      return p.left > 60 ? "in ~" + Math.round(p.left / 30) + " months" : "in " + p.left + (p.left === 1 ? " day" : " days");
+    }
+    var u = p.unit === "hr" ? " hr" : " mi";
+    if (p.left <= 0) return (short ? "over " : "overdue by ~") + fmtInt(-p.left) + u;
+    return "~" + fmtInt(p.left) + u + (short ? " left" : " to go");
+  }
+  // badge for the truck cards on Office > Trucks
+  function serviceBadge(t) {
+    if (!svcLoaded) return "";
+    var R = serviceEstimate(t);
+    if (!R.plan.every_miles && !R.plan.every_hours && !R.plan.every_months) return '<div class="fleet-svc">&#128295; Set service interval</div>';
+    if (!R.last) return '<div class="fleet-svc soon">&#128295; Log last service</div>';
+    if (!R.main) return '<div class="fleet-svc">&#128295; Needs odometer or hours</div>';
+    return '<div class="fleet-svc ' + R.state + '">&#128295; ' + (R.state === "due" ? "Service due · " : "Service ") + esc(leftText(R.main, true)) + '</div>';
+  }
+
+  function vdCode() { var info = truckInfo(detailTruck); return info ? info.code : ""; }
+  async function loadVehicleDetail(code, force) {
+    if (!code || !unlocked || vdLoading[code]) return;
+    if (!force && vdCache[code] && Date.now() - vdCache[code].at < 60000) return;
+    vdLoading[code] = true;
+    try {
+      var d = await sbRpc("admin_vehicle_detail", { p_pin: sessionPin, p_code: code });
+      vdCache[code] = { at: Date.now(), data: d || {}, error: "" };
+      var need = ((d && d.docs) || []).map(function (x) { return x.file_path; }).filter(function (p) { var u = docUrls[p]; return !u || Date.now() - u.at > 45 * 60000; });
+      if (need.length) {
+        try {
+          var r = await docsFn({ action: "sign", paths: need });
+          Object.keys(r.urls || {}).forEach(function (p) { docUrls[p] = { url: r.urls[p], at: Date.now() }; });
+        } catch (e) { vdCache[code].docError = String(e.message || e); }
+      }
+    } catch (e) {
+      var m = String(e && e.message || e);
+      vdCache[code] = { at: Date.now(), data: {}, error: /admin_vehicle_detail|schema cache|function/i.test(m) ? "setup" : m };
+    } finally { vdLoading[code] = false; }
+    if (view === "truck" && vdCode() === code) renderVehicleExtras();
+  }
+  async function docsFn(payload) {
+    payload.pin = sessionPin;
+    var r, d = null;
+    try { r = await fetch(SUPABASE_URL + "/functions/v1/vehicle-docs", { method: "POST", headers: sbHeaders(), body: JSON.stringify(payload) }); }
+    catch (e) { throw new Error("Couldn't reach the documents service. Is the vehicle-docs function deployed?"); }
+    try { d = await r.json(); } catch (e) {}
+    if (r.status === 404 && !(d && d.error)) throw new Error("The vehicle-docs function isn't deployed yet.");
+    if (!d || !d.ok) throw new Error((d && (d.error || d.message || d.msg)) || ("error " + r.status));
+    return d;
+  }
+
+  function renderVehicleExtras() {
+    var info = truckInfo(detailTruck);
+    if (!info) { $("tdMaint").classList.add("hidden"); return; }
+    $("tdMaint").classList.remove("hidden");
+    var code = info.code, C = vdCache[code], D = (C && C.data) || {};
+    var setupMsg = '<div class="banner warn" style="margin:0;">Maintenance isn’t set up in the database yet. Run the latest <b>supabase/setup.sql</b> in the Supabase SQL Editor (see the README).</div>';
+    var broken = svcError === "setup" || (C && C.error === "setup");
+    ["btnSvcPlan", "btnMaintAdd", "btnDocAdd"].forEach(function (id) { $(id).disabled = !!broken; });
+
+    // --- next service ---
+    var R = serviceEstimate(info), isTruck = info.kind === "Truck", h = "";
+    var unitWord = isTruck ? "miles" : "hours";
+    if (broken) h = setupMsg;
+    else if (!svcLoaded) h = '<div class="svc-how">Loading…</div>';
+    else {
+      var odoLine = R.curOdo != null ? "Odometer now about <b>" + fmtInt(R.curOdo) + "</b>" + (R.fillsAfterOdo ? " (last entered " + fmtInt(R.odoReading.odometer) + " on " + fmtDate(R.odoReading.ts) + ", + " + R.fillsAfterOdo + " fill-up" + (R.fillsAfterOdo === 1 ? "" : "s") + " × " + fmtInt(R.mpt) + " mi since)" : "") + ". " : "";
+      var hrLine = R.hoursReading ? "Hour meter last read <b>" + fmtInt(R.hoursReading.hours) + " hr</b> on " + fmtDate(R.hoursReading.ts) + ". " : "";
+      var mptLine = R.mpt ? "Each fill-up without an odometer counts as <b>" + fmtInt(R.mpt) + " miles</b>" + (R.mptDefault ? " (Ford/Ram full tank)" : "") + ". " : "";
+      var plan = R.plan, hasPlan = plan.every_miles || plan.every_hours || plan.every_months;
+      var planLine = hasPlan ? "Interval: every " + [plan.every_miles ? fmtInt(plan.every_miles) + " mi" : "", plan.every_hours ? fmtInt(plan.every_hours) + " hr" : "", plan.every_months ? plan.every_months + " months" : ""].filter(Boolean).join(" or ") + ". " : "";
+      if (!hasPlan) {
+        h = '<div class="svc-top"><div><div class="svc-num" style="font-size:30px;">No interval set</div><div class="svc-sub">Tap <b>Set interval</b> to choose how often this ' + (isTruck ? "truck" : "machine") + ' gets serviced.</div></div><div class="svc-state">Not set</div></div>' +
+          '<div class="svc-how" style="margin-top:12px;">' + odoLine + hrLine + mptLine + '</div>';
+      } else if (!R.last) {
+        h = '<div class="svc-top"><div><div class="svc-num" style="font-size:30px;">Log the last service</div><div class="svc-sub">The countdown starts from the last time it was serviced. Tap <b>+ Log service</b> and enter the date' + (isTruck ? " and odometer" : " and hours") + '.</div></div><div class="svc-state soon">Needs a start</div></div>' +
+          '<div class="svc-how" style="margin-top:12px;">' + planLine + odoLine + hrLine + mptLine + '</div>';
+      } else {
+        var M = R.main, last = R.last;
+        var lastLine = "Last service: <b>" + esc(last.work || "service") + "</b> on " + fmtDay(last.done_on) + (last.odometer > 0 ? " at " + fmtInt(last.odometer) + " mi" : "") + (last.hours > 0 ? " at " + fmtInt(last.hours) + " hr" : "") + ". ";
+        var sinceLine = "";
+        if (R.milesSince != null) {
+          sinceLine = "Since then: <b>~" + fmtInt(R.milesSince) + " mi</b>";
+          if (R.milesHow === "fills") sinceLine += " (" + R.since.length + " fill-up" + (R.since.length === 1 ? "" : "s") + " × " + fmtInt(R.mpt) + " mi per tank)";
+          else if (R.milesHow === "mpg") sinceLine += " (fuel used × " + R.avgMpg + " avg MPG)";
+          else if (R.milesHow === "odo+fills") sinceLine += " (odometer, plus " + R.fillsAfterOdo + " fill-up" + (R.fillsAfterOdo === 1 ? "" : "s") + " × " + fmtInt(R.mpt) + " mi after the last reading)";
+          else sinceLine += " (from the odometer)";
+          sinceLine += ". ";
+        } else if (R.hoursSince != null) sinceLine = "Since then: <b>" + fmtInt(R.hoursSince) + " hr</b>. ";
+        else if (isTruck && plan.every_miles) sinceLine = "No odometer readings since, and no miles-per-tank set, so miles can’t be estimated yet. ";
+        if (!M) {
+          h = '<div class="svc-top"><div><div class="svc-num" style="font-size:30px;">Not enough data yet</div><div class="svc-sub">' + (isTruck ? "Enter the odometer on fill-ups or set miles per full tank." : "Enter the hour meter on fill-ups, or set a months interval.") + '</div></div><div class="svc-state">Waiting</div></div>' +
+            '<div class="svc-how" style="margin-top:12px;">' + lastLine + sinceLine + planLine + '</div>';
+        } else {
+          var big = M.unit === "days" ? (M.left <= 0 ? "Overdue" : (M.left > 60 ? "~" + Math.round(M.left / 30) + "<small>months left</small>" : M.left + "<small>days left</small>"))
+            : (M.left <= 0 ? "Overdue<small>by ~" + fmtInt(-M.left) + (M.unit === "hr" ? " hr" : " mi") + "</small>" : "~" + fmtInt(M.left) + "<small>" + (M.unit === "hr" ? "hours" : "miles") + " to next service</small>");
+          var dueBits = [];
+          R.parts.forEach(function (p) {
+            if (p.unit === "days") dueBits.push("by " + R.dueDate.toLocaleDateString("en-US"));
+            else if (p.dueAt) dueBits.push("around " + fmtInt(p.dueAt) + (p.unit === "hr" ? " hr" : " mi"));
+            else if (p.left > 0) dueBits.push("in ~" + fmtInt(p.left) + (p.unit === "hr" ? " hr" : " mi"));
+            else dueBits.push("now");
+          });
+          var stateTxt = { ok: "On track", soon: "Due soon", due: "Due now" }[R.state];
+          var pct = Math.max(0.02, Math.min(1, M.pct));
+          h = '<div class="svc-top"><div><div class="svc-num">' + big + '</div><div class="svc-sub">Next service ' + esc(dueBits.join(" or ")) + (dueBits.length > 1 ? ", whichever comes first" : "") + '</div></div><div class="svc-state ' + R.state + '">' + stateTxt + '</div></div>' +
+            '<div class="svc-bar ' + R.state + '"><i style="width:' + (pct * 100) + '%"></i></div>' +
+            '<div class="svc-how">' + lastLine + sinceLine + planLine + (R.milesHow === "fills" ? "" : mptLine) + 'This is an estimate; log each service when it’s done to keep it right.</div>';
+        }
+      }
+    }
+    $("svcBody").innerHTML = h;
+    $("mfOdoLabel").textContent = isTruck ? "Odometer" : "Hour meter";
+
+    // --- maintenance history ---
+    var ml = $("maintList");
+    if (broken) ml.innerHTML = setupMsg;
+    else if (!C) ml.innerHTML = '<div class="svc-how">Loading…</div>';
+    else if (C.error) ml.innerHTML = '<div class="banner err" style="margin:0;">' + esc(C.error) + '</div>';
+    else {
+      var items = D.maintenance || [], docs = D.docs || [];
+      if (!items.length) ml.innerHTML = '<div class="svc-how">No services logged yet. Tap <b>+ Log service</b> after an oil change, tires, brakes or any repair.</div>';
+      else {
+        ml.innerHTML = "";
+        items.forEach(function (m) {
+          var att = docs.filter(function (d) { return d.maint_id === m.id; });
+          var row = document.createElement("div"); row.className = "maint-item";
+          var meta = [m.odometer > 0 ? fmtInt(m.odometer) + " mi" : "", m.hours > 0 ? fmtInt(m.hours) + " hr" : "", m.cost > 0 ? fmtMoney(m.cost) : "", m.vendor || ""].filter(Boolean).join(" · ");
+          row.innerHTML = '<div class="maint-date">' + fmtDay(m.done_on) + '</div><div><div class="maint-work">' + esc(m.work || "Service") + '</div>' +
+            (meta ? '<div class="maint-meta">' + esc(meta) + '</div>' : "") + (m.notes ? '<div class="maint-meta">' + esc(m.notes) + '</div>' : "") +
+            (att.length ? '<div class="maint-clip">&#128206; ' + att.length + ' attached</div>' : "") + '</div><div class="maint-meta">&#9998;</div>';
+          row.addEventListener("click", function (ev) {
+            if (ev.target.closest(".maint-clip") && att.length) { openDoc(att[0]); return; }
+            openMaintForm(m);
+          });
+          ml.appendChild(row);
+        });
+      }
+    }
+
+    // --- documents ---
+    var reg = D.registration, rl = $("regLine");
+    if (reg && (reg.plate || reg.vin || reg.expires)) {
+      var exp = reg.expires ? parseDay(reg.expires) : null, days = exp ? Math.round((exp - new Date()) / 864e5) : null;
+      rl.innerHTML = [reg.year || "", esc(reg.make || ""), esc(reg.model || "")].join(" ").trim() + (reg.plate ? " · plate " + esc(reg.plate) + (reg.state ? " (" + esc(reg.state) + ")" : "") : "") + (reg.vin ? " · VIN " + esc(reg.vin) : "") +
+        (exp ? ' · registration <span class="' + (days < 0 ? "exp-bad" : days <= 30 ? "exp-soon" : "") + '">' + (days < 0 ? "expired " : "expires ") + exp.toLocaleDateString("en-US") + '</span>' : "");
+    } else rl.innerHTML = "";
+    var grid = $("docGrid"); grid.innerHTML = "";
+    var dlist = (C && !C.error && D.docs) || [];
+    $("docEmpty").textContent = broken ? "" : !C ? "Loading…" : C.docError ? "Couldn't open the files: " + C.docError : (!dlist.length ? "No documents yet. Tap + Upload to add a registration, receipt or insurance card." : "");
+    dlist.forEach(function (d) {
+      var tile = document.createElement("button"); tile.className = "doc-tile";
+      var isImg = /^image\//.test(d.mime), u = docUrls[d.file_path];
+      tile.innerHTML = '<div class="doc-thumb">' + (isImg && u ? '<img alt="" loading="lazy" src="' + esc(u.url) + '" />' : (/pdf/.test(d.mime) ? "PDF" : "FILE")) + '</div>' +
+        '<div class="doc-cap"><div class="doc-type">' + esc(d.doc_type) + '</div><div class="doc-title">' + esc(d.title || fmtDateFull(d.created_at)) + '</div></div>';
+      var del = document.createElement("span"); del.className = "doc-del" + (docDelKey === d.id ? " sure" : ""); del.textContent = docDelKey === d.id ? "Delete" : "✕";
+      del.setAttribute("role", "button");
+      del.addEventListener("click", function (ev) {
+        ev.stopPropagation();
+        if (docDelKey !== d.id) { docDelKey = d.id; clearTimeout(docDelTimer); docDelTimer = setTimeout(function () { docDelKey = null; if (view === "truck") renderVehicleExtras(); }, 3000); renderVehicleExtras(); return; }
+        docDelKey = null;
+        docsFn({ action: "delete", id: d.id }).then(function () { return refreshVehicle(code); })
+          .catch(function (e) { $("docEmpty").textContent = "Couldn't delete: " + e.message; });
+      });
+      tile.appendChild(del);
+      tile.addEventListener("click", function () { openDoc(d); });
+      grid.appendChild(tile);
+    });
+  }
+  async function refreshVehicle(code) {
+    await Promise.all([fetchService(), loadVehicleDetail(code, true)]);
+    if (view === "truck") renderVehicleExtras();
+  }
+  function openDoc(d) {
+    var u = docUrls[d.file_path];
+    if (!u) { $("docEmpty").textContent = "That file's link isn't ready. Try again in a moment."; loadVehicleDetail(vdCode(), true); return; }
+    if (!/^image\//.test(d.mime)) { window.open(u.url, "_blank", "noopener"); return; }
+    var ov = document.createElement("div"); ov.className = "doc-view";
+    ov.innerHTML = '<img alt="" src="' + esc(u.url) + '" /><div class="row-btns"><a class="btn-gray" href="' + esc(u.url) + '" target="_blank" rel="noopener" style="text-decoration:none;">Open full size</a><button class="btn-export">Close</button></div>';
+    ov.addEventListener("click", function (ev) { if (ev.target === ov || ev.target.tagName === "BUTTON") ov.remove(); });
+    document.body.appendChild(ov);
+  }
+
+  // --- set interval ---
+  $("btnSvcPlan").addEventListener("click", function () {
+    var f = $("svcPlanForm"), info = truckInfo(detailTruck); if (!info) return;
+    if (!f.classList.contains("hidden")) { f.classList.add("hidden"); return; }
+    var s = svcOf(info);
+    $("spMiles").value = s.every_miles || ""; $("spHours").value = s.every_hours || ""; $("spMonths").value = s.every_months || "";
+    $("spTank").value = s.miles_per_tank != null ? s.miles_per_tank : (defaultMilesPerTank(info) || "");
+    $("spMiles").placeholder = info.kind === "Truck" ? "e.g. 5000" : "";
+    hideErr("spErr"); f.classList.remove("hidden");
+  });
+  $("btnSpCancel").addEventListener("click", function () { $("svcPlanForm").classList.add("hidden"); });
+  $("btnSpSave").addEventListener("click", async function () {
+    var info = truckInfo(detailTruck); if (!info) return;
+    var b = this; b.disabled = true; hideErr("spErr");
+    try {
+      await sbRpc("admin_save_service_plan", { p_pin: sessionPin, p_code: info.code,
+        p_every_miles: Math.round(num($("spMiles").value)) || null, p_every_hours: Math.round(num($("spHours").value)) || null,
+        p_every_months: Math.round(num($("spMonths").value)) || null, p_miles_per_tank: num($("spTank").value) || null });
+      $("svcPlanForm").classList.add("hidden");
+      await refreshVehicle(info.code);
+    } catch (e) { showErr("spErr", "Couldn't save: " + (e.message || e)); }
+    b.disabled = false;
+  });
+
+  // --- log / edit a service ---
+  function openMaintForm(m) {
+    var info = truckInfo(detailTruck); if (!info) return;
+    maintEditId = m ? m.id : null; maintFile = null;
+    var R = serviceEstimate(info), isTruck = info.kind === "Truck";
+    $("mfDate").value = m ? String(m.done_on).slice(0, 10) : todayYmd();
+    var w = m ? m.work : "Oil change", sel = $("mfWork");
+    if (w && !Array.prototype.some.call(sel.options, function (o) { return o.value === w; })) { var o = document.createElement("option"); o.textContent = w; sel.appendChild(o); }
+    sel.value = w || "Oil change";
+    var reading = m ? (isTruck ? m.odometer : m.hours) : (isTruck ? (R.curOdo != null ? Math.round(R.curOdo) : "") : (R.hoursReading ? R.hoursReading.hours : ""));
+    $("mfOdo").value = reading > 0 ? reading : "";
+    $("mfCost").value = m && m.cost ? m.cost : ""; $("mfVendor").value = m ? m.vendor || "" : ""; $("mfNotes").value = m ? m.notes || "" : "";
+    $("btnMfFile").innerHTML = "&#128206; Attach";
+    $("btnMfDelete").classList.toggle("hidden", !m); $("btnMfDelete").textContent = "Delete";
+    $("btnMfSave").textContent = m ? "Save changes" : "Save service";
+    hideErr("mfErr"); $("maintForm").classList.remove("hidden");
+  }
+  $("btnMaintAdd").addEventListener("click", function () {
+    if (!$("maintForm").classList.contains("hidden") && !maintEditId) { $("maintForm").classList.add("hidden"); return; }
+    openMaintForm(null);
+  });
+  $("btnMfCancel").addEventListener("click", function () { $("maintForm").classList.add("hidden"); maintEditId = null; maintFile = null; });
+  $("btnMfFile").addEventListener("click", function () { $("mfFile").click(); });
+  $("mfFile").addEventListener("change", function () {
+    maintFile = this.files && this.files[0] || null; this.value = "";
+    $("btnMfFile").innerHTML = maintFile ? "&#10003; " + esc(maintFile.name.slice(0, 18)) : "&#128206; Attach";
+  });
+  $("btnMfDelete").addEventListener("click", async function () {
+    var b = this, info = truckInfo(detailTruck); if (!maintEditId || !info) return;
+    if (b.textContent !== "Tap again to delete") { b.textContent = "Tap again to delete"; setTimeout(function () { b.textContent = "Delete"; }, 3000); return; }
+    b.disabled = true;
+    try { await sbRpc("admin_delete_maintenance", { p_pin: sessionPin, p_id: maintEditId }); $("maintForm").classList.add("hidden"); maintEditId = null; await refreshVehicle(info.code); }
+    catch (e) { showErr("mfErr", "Couldn't delete: " + (e.message || e)); }
+    b.disabled = false;
+  });
+  $("btnMfSave").addEventListener("click", async function () {
+    var info = truckInfo(detailTruck); if (!info) return;
+    var isTruck = info.kind === "Truck", date = $("mfDate").value;
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(date)) { showErr("mfErr", "Pick the date the work was done."); return; }
+    var reading = num($("mfOdo").value);
+    var b = this; b.disabled = true; hideErr("mfErr");
+    try {
+      var id = await sbRpc("admin_save_maintenance", { p_pin: sessionPin, p_code: info.code, p_id: maintEditId, p_done_on: date,
+        p_odometer: isTruck && reading > 0 ? reading : null, p_hours: !isTruck && reading > 0 ? reading : null,
+        p_work: $("mfWork").value, p_cost: num($("mfCost").value) || null, p_vendor: $("mfVendor").value, p_notes: $("mfNotes").value, p_by: operator || "Office" });
+      if (maintFile) {
+        b.textContent = "Uploading receipt…";
+        try { await uploadDoc(info.code, maintFile, "Receipt", ($("mfWork").value + " " + fmtDay(date)).trim(), id); }
+        catch (e) { showErr("mfErr", "Service saved, but the receipt didn't upload: " + e.message); }
+      }
+      if ($("mfErr").classList.contains("hidden")) $("maintForm").classList.add("hidden");
+      maintEditId = null; maintFile = null;
+      await refreshVehicle(info.code);
+    } catch (e) { showErr("mfErr", "Couldn't save: " + (e.message || e)); }
+    b.disabled = false; b.textContent = "Save service";
+  });
+
+  // --- upload a document ---
+  function fileToB64(file) {
+    return new Promise(function (resolve) {
+      if (/^image\//.test(file.type) && !/gif|svg/.test(file.type)) {
+        resizeImage(file, 2200, function (b64) { resolve(b64 ? { data: b64, mime: "image/jpeg", name: file.name.replace(/\.[^.]+$/, "") + ".jpg" } : null); });
+        return;
+      }
+      var r = new FileReader();
+      r.onerror = function () { resolve(null); };
+      r.onload = function () { resolve({ data: String(r.result).split(",")[1] || "", mime: file.type || "application/octet-stream", name: file.name }); };
+      r.readAsDataURL(file);
+    });
+  }
+  async function uploadDoc(code, file, type, title, maintId) {
+    if (file.size > 25 * 1024 * 1024) throw new Error("That file is too big (over 25 MB).");
+    var f = await fileToB64(file);
+    if (!f || !f.data) throw new Error("Couldn't read that file.");
+    if (f.data.length * 0.75 > 15 * 1024 * 1024) throw new Error("That file is over 15 MB.");
+    return docsFn({ action: "upload", code: code, docType: type, title: title || "", fileName: f.name, mime: f.mime, data: f.data, maintId: maintId || null });
+  }
+  $("btnDocAdd").addEventListener("click", function () {
+    var f = $("docForm");
+    if (!f.classList.contains("hidden")) { f.classList.add("hidden"); return; }
+    $("dfTitle").value = ""; $("dfStatus").classList.add("hidden"); f.classList.remove("hidden");
+  });
+  $("btnDfCancel").addEventListener("click", function () { $("docForm").classList.add("hidden"); });
+  $("btnDfPick").addEventListener("click", function () { $("dfFile").click(); });
+  $("dfFile").addEventListener("change", async function () {
+    var file = this.files && this.files[0]; this.value = "";
+    var info = truckInfo(detailTruck); if (!file || !info) return;
+    var st = $("dfStatus"), b = $("btnDfPick");
+    st.className = "banner info"; st.style.margin = "12px 0 0"; st.textContent = "Uploading " + file.name + "…"; b.disabled = true;
+    try {
+      await uploadDoc(info.code, file, $("dfType").value, $("dfTitle").value.trim());
+      st.className = "banner ok"; st.textContent = "✓ Saved to " + info.name;
+      $("dfTitle").value = "";
+      await refreshVehicle(info.code);
+      setTimeout(function () { $("docForm").classList.add("hidden"); }, 1500);
+    } catch (e) { st.className = "banner err"; st.textContent = "Couldn't upload: " + (e.message || e); }
+    b.disabled = false;
+  });
 
   // ---------- manage: trucks, drivers, AI key ----------
   function renderManage() {
