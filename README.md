@@ -59,6 +59,7 @@ Then in Office > **Trucks**, tap any truck or machine:
 
 - **Next service** shows about how far it is until the next service. Tap **Set interval** to choose every so many miles, engine hours or months (whichever comes first).
 - **+ Log service** records an oil change, tires, brakes or any repair, with the odometer (or hour meter), cost, shop, notes and an optional receipt photo. Tap a past service to edit or delete it. The countdown starts from the most recent one, so log the last service first.
+- **Registered / titled to** picks which company (LLC) the truck or machine is registered to. Pick **Other company...** to add a new one. Office > Trucks search finds trucks by company too.
 - **+ Upload** adds a registration, receipt, insurance card or other paper as a photo or PDF. Tap one to open it.
 
 How miles are estimated: when drivers enter the odometer it uses that. Fill-ups logged without an odometer each count as one full tank, which is **300 miles** for the Fords and the Ram unless you set a different number under **Set interval**.

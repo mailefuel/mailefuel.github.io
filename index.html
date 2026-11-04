@@ -663,6 +663,12 @@
   .doc-title { font-size: 13px; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
   .doc-del { position: absolute; top: 6px; right: 6px; width: 28px; height: 28px; border-radius: 50%; background: rgba(10,15,40,0.65); color: #FFFFFF; font-size: 13px; font-weight: 700; display: grid; place-items: center; }
   .doc-del.sure { width: auto; padding: 0 10px; border-radius: 999px; background: rgba(160,30,10,0.85); font-size: 11.5px; }
+  .td-photo { display: inline-flex; align-items: center; flex: none; }
+  .td-photo.has-photo { width: 240px; height: 160px; border-radius: 18px; overflow: hidden; border: 1px solid var(--edge); box-shadow: 0 0 0 4px rgba(255,255,255,0.18), 0 14px 34px rgba(10,15,40,0.35); background: #1b2340; animation: pop .5s var(--spring) both; }
+  .td-photo.has-photo img { width: 100%; height: 100%; object-fit: cover; display: block; }
+  @media (max-width: 640px) { .td-photo.has-photo { width: 150px; height: 100px; border-radius: 14px; } }
+  .owner-row { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 10px; margin-bottom: 12px; }
+  .owner-row select { flex: 1 1 200px; width: auto; } .owner-row input { flex: 1 1 200px; width: auto; }
   .reg-line { font-size: 13px; color: var(--ink2); margin-bottom: 12px; line-height: 1.5; }
   .reg-line .exp-bad { color: var(--red); font-weight: 700; } .reg-line .exp-soon { color: var(--amber); font-weight: 700; }
   .fleet-svc { margin: 8px 0 10px; font-size: 12px; font-weight: 700; padding: 4px 10px; border-radius: 999px; display: inline-block; border: 1px solid var(--edge); color: var(--ink2); }
@@ -899,7 +905,7 @@
           <button class="fleet-btn filter-btn" data-kind="Truck">Trucks</button>
           <button class="fleet-btn filter-btn" data-kind="Equipment">Equipment</button>
         </div>
-        <input class="input small fleet-search" id="fleetSearch" placeholder="Search name, barcode or driver" autocomplete="off" />
+        <input class="input small fleet-search" id="fleetSearch" placeholder="Search name, barcode, driver or company" autocomplete="off" />
       </div>
       <div class="rep-controls fleet-print">
         <div class="sync-line" id="fleetCount" style="margin:0"></div>
@@ -1097,6 +1103,13 @@
           <div id="dfStatus" class="banner hidden" style="margin:12px 0 0;"></div>
           <div class="row-btns"><button class="btn-gray" id="btnDfCancel">Cancel</button><button class="btn-export" id="btnDfPick">&#128247; Photo or file</button></div>
         </div>
+        <div class="owner-row">
+          <label class="label" for="ownerSel" style="margin:0;">Registered / titled to</label>
+          <select class="input small" id="ownerSel"></select>
+          <input class="input small hidden" id="ownerOther" placeholder="Company name, e.g. Maile Leasing LLC" autocomplete="off" />
+          <button class="btn-export hidden" id="btnOwnerSave">Save</button>
+          <span class="hint left" id="ownerMsg" style="margin:0;"></span>
+        </div>
         <div class="reg-line" id="regLine"></div>
         <div class="doc-grid" id="docGrid"></div>
         <div class="hint left" id="docEmpty"></div>
@@ -1161,7 +1174,7 @@
       </div>
       <div class="field">
         <label class="label" for="regOwner">Registered owner</label>
-        <input class="input small" id="regOwner" autocomplete="off" />
+        <input class="input small" id="regOwner" list="ownerList" autocomplete="off" /><datalist id="ownerList"></datalist>
       </div>
       <div id="regError" class="banner err hidden"></div>
       <button class="btn-save" id="btnRegSave">Save &amp; Make QR Code</button>
@@ -2252,7 +2265,7 @@
     list = list.filter(function (t) {
       if (fleetKind !== "all" && t.kind !== fleetKind) return false;
       if (!q) return true;
-      return (t.name + " " + (t.code || "") + " " + (t.driver || "")).toLowerCase().indexOf(q) >= 0;
+      return (t.name + " " + (t.code || "") + " " + (t.driver || "") + " " + (svcOf(t).owner || "")).toLowerCase().indexOf(q) >= 0;
     });
     $("fleetCount").textContent = nT + (nT === 1 ? " truck" : " trucks") + " \u00b7 " + nE + " equipment";
     $("fleetCount").className = "sync-line";
@@ -2266,7 +2279,7 @@
       b.innerHTML =
         '<div class="fleet-photo">' + kindIcon(t.kind, t.kind === "Truck" ? 62 : 70) + '</div><div class="fleet-check">\u2713</div>' +
         '<div class="fleet-body"><div class="fleet-name">' + esc(t.name) + '</div>' +
-        '<div class="fleet-code">' + esc(t.code || "no barcode") + '</div>' +
+        '<div class="fleet-code">' + esc(t.code || "no barcode") + (svcOf(t).owner ? " \u00b7 " + esc(svcOf(t).owner) : "") + '</div>' +
         '<div class="fleet-tags"><span class="fleet-tag">' + (t.kind === "Equipment" ? "Equipment" : "Truck") + '</span>' +
         '<span class="fleet-tag" style="border-color:' + PRODUCT_COLORS[t.fuelType] + '">' + t.fuelType + '</span>' +
         (t.usesDef ? '<span class="fleet-tag" style="border-color:' + PRODUCT_COLORS.DEF + '">DEF</span>' : "") + '</div>' + serviceBadge(t) +
@@ -2827,7 +2840,18 @@
     var info = truckInfo(T.name);
     if (info) loadVehicleDetail(info.code);
     renderVehicleExtras();
-    $("tdName").innerHTML = kindIcon(T.kind, 46, true) + esc(T.name);
+    // the vehicle's own photo (photos/<barcode>.jpg) at the top, or its truck / equipment icon until it has one
+    var photoCode = info && info.code ? info.code : "";
+    if ($("tdName").getAttribute("data-for") !== T.name + "|" + photoCode) {
+      $("tdName").setAttribute("data-for", T.name + "|" + photoCode);
+      $("tdName").innerHTML = '<span class="td-photo">' + kindIcon(T.kind, 46, true) + '</span><span class="td-title">' + esc(T.name) + '</span>';
+      if (photoCode) {
+        var tph = $("tdName").querySelector(".td-photo"), timg = new Image();
+        timg.alt = T.name;
+        timg.onload = function () { if (tph.isConnected) { tph.innerHTML = ""; tph.appendChild(timg); tph.classList.add("has-photo"); } };
+        timg.src = "photos/" + encodeURIComponent(photoCode) + ".jpg";
+      }
+    }
     var drv = Object.keys(T.drivers);
     $("tdSub").textContent = kindLabel(T.kind) + " \u00b7 " + (info ? info.fuelType + (info.usesDef ? " \u00b7 uses DEF" : "") + (info.code ? " \u00b7 " + info.code : "") : T.fuelType) + (drv.length ? " \u00b7 drivers: " + drv.join(", ") : "");
     var best = T.mpgs.length ? Math.max.apply(null, T.mpgs) : null, worst = T.mpgs.length ? Math.min.apply(null, T.mpgs) : null;
@@ -2844,6 +2868,7 @@
     renderTruckCharts(T, rows, asc, stats);
 
     var body = $("tdBody"); body.innerHTML = "";
+    body.closest(".card").classList.toggle("hidden", !rows.length);
     rows.forEach(function (e) {
       var i = stats.byId[e.id] || { flags: [] };
       var has = function (f) { return i.flags.indexOf(f) >= 0; };
@@ -3083,6 +3108,7 @@
     }
 
     // --- documents ---
+    renderOwnerPicker(info, D, broken);
     var reg = D.registration, rl = $("regLine");
     if (reg && (reg.plate || reg.vin || reg.expires)) {
       var exp = reg.expires ? parseDay(reg.expires) : null, days = exp ? Math.round((exp - new Date()) / 864e5) : null;
@@ -3206,6 +3232,43 @@
     b.disabled = false; b.textContent = "Save service";
   });
 
+
+  // --- which company (LLC) it's registered / titled to ---
+  var OWNER_DEFAULTS = ["Maile, Inc.", "Maile Leasing LLC", "Maile Concrete"];
+  function ownerNames() {
+    var seen = {}, out = [];
+    function add(n) { n = String(n || "").trim(); if (n && !seen[n.toLowerCase()]) { seen[n.toLowerCase()] = 1; out.push(n); } }
+    OWNER_DEFAULTS.forEach(add);
+    Object.keys(svc).forEach(function (k) { add(svc[k].owner); });
+    (regs || []).forEach(function (r) { add(r.owner); });
+    return out.sort(function (a, b) { return a.localeCompare(b); });
+  }
+  function renderOwnerPicker(info, D, broken) {
+    var sel = $("ownerSel"), cur = ((D.registration && D.registration.owner) || svcOf(info).owner || "").trim();
+    if (document.activeElement === sel || document.activeElement === $("ownerOther")) return;
+    var names = ownerNames();
+    sel.innerHTML = '<option value="">Not set</option>' + names.map(function (n) { return '<option' + (n === cur ? " selected" : "") + '>' + esc(n) + '</option>'; }).join("") + '<option value="__other">Other company\u2026</option>';
+    sel.value = cur; sel.disabled = !!broken || !svcLoaded;
+    $("ownerOther").classList.add("hidden"); $("btnOwnerSave").classList.add("hidden");
+    $("ownerList").innerHTML = names.map(function (n) { return '<option value="' + esc(n) + '">'; }).join("");
+  }
+  async function saveOwner(name) {
+    var info = truckInfo(detailTruck); if (!info) return;
+    $("ownerMsg").textContent = "Saving\u2026";
+    try {
+      await sbRpc("admin_set_owner", { p_pin: sessionPin, p_code: info.code, p_owner: name });
+      $("ownerMsg").textContent = "\u2713 Saved";
+      setTimeout(function () { $("ownerMsg").textContent = ""; }, 2500);
+      if (document.activeElement && document.activeElement.blur) document.activeElement.blur();
+      await refreshVehicle(info.code);
+    } catch (e) { $("ownerMsg").textContent = "Couldn't save: " + (e.message || e); }
+  }
+  $("ownerSel").addEventListener("change", function () {
+    if (this.value === "__other") { $("ownerOther").value = ""; $("ownerOther").classList.remove("hidden"); $("btnOwnerSave").classList.remove("hidden"); $("ownerOther").focus(); return; }
+    saveOwner(this.value);
+  });
+  $("btnOwnerSave").addEventListener("click", function () { var v = $("ownerOther").value.trim(); if (v) saveOwner(v); });
+  $("ownerOther").addEventListener("keydown", function (ev) { if (ev.key === "Enter") { ev.preventDefault(); var v = this.value.trim(); if (v) saveOwner(v); } });
   // --- upload a document ---
   function fileToB64(file) {
     return new Promise(function (resolve) {
