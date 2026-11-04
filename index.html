@@ -3785,8 +3785,20 @@
     if (isFull()) { fsLeft = true; leaveFull(); } else { fsLeft = false; goFull(); }
   });
   // pointerup (touch) and click count as a real tap for the browser; pointerdown on a touchscreen does not
+  // Auto full screen is for tablets only: a touch screen as the main pointer and a short side of at
+  // least 600px. Desktops (mouse) and phones (iPhone/Android, short side under 600px) are left alone;
+  // the full screen button still works everywhere.
+  function isTablet() {
+    try {
+      var touch = matchMedia("(pointer: coarse)").matches && !matchMedia("(pointer: fine)").matches;
+      var shortSide = Math.min(screen.width, screen.height);
+      var iPad = /iPad/.test(navigator.userAgent) || (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1);
+      return (touch && shortSide >= 600) || iPad;
+    } catch (e) { return false; }
+  }
+  var autoFull = isTablet();
   function fsTap(e) {
-    if (fsLeft || isApp() || isFull()) return;
+    if (!autoFull || fsLeft || isApp() || isFull()) return;
     if (e.target.closest && e.target.closest("#btnFull")) return;
     goFull();
   }
