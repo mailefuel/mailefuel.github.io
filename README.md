@@ -8,8 +8,10 @@ Fuel log for Maile Concrete. Drivers use a shop tablet to log truck, equipment a
 | --- | --- |
 | `index.html` | The whole app in one file. Open it in a browser on the tablet. |
 | `supabase/setup.sql` | Database setup: tables, security rules and the PIN-checked functions the app calls. |
+| `supabase/maintenance.sql` | Just the maintenance and documents tables and functions (also included in `setup.sql`). |
 | `supabase/rename.sql` | Just the rename functions (also included in `setup.sql`), for adding renaming to a database that's already set up. |
 | `supabase/functions/scan-receipt/index.ts` | Edge Function that reads a receipt photo with Gemini and returns vendor, address, date, time, line items and total. |
+| `supabase/functions/vehicle-docs/index.ts` | Edge Function that uploads, opens and deletes a truck's documents after checking the Reports PIN. |
 | `supabase/functions/scan-registration/index.ts` | Edge Function that reads a vehicle registration photo with Gemini and returns plate, state, VIN, year, make, model, owner and expiry. |
 
 ## 1. Set up the database
@@ -48,6 +50,21 @@ It uses the same `GEMINI_API_KEY` secret as the receipt scanner, so there is not
 
 Near the top of the script in `index.html` are `SUPABASE_URL` and `SUPABASE_ANON_KEY`. They must match **Project Settings** > **API** in Supabase. The anon key is meant to be public; the database rules below are what keep the logs safe.
 
+## 5. Turn on maintenance and documents
+
+1. In Supabase, go to **SQL Editor** > **New query**, paste the whole of `supabase/setup.sql` (or just `supabase/maintenance.sql`) and click **Run**. This adds the maintenance tables and a private file bucket called `vehicle-docs`.
+2. Go to **Edge Functions** > **Deploy a new function** > **Via editor**, name it exactly `vehicle-docs`, paste the whole of `supabase/functions/vehicle-docs/index.ts` and click **Deploy**. There is no secret to add.
+
+Then in Office > **Trucks**, tap any truck or machine:
+
+- **Next service** shows about how far it is until the next service. Tap **Set interval** to choose every so many miles, engine hours or months (whichever comes first).
+- **+ Log service** records an oil change, tires, brakes or any repair, with the odometer (or hour meter), cost, shop, notes and an optional receipt photo. Tap a past service to edit or delete it. The countdown starts from the most recent one, so log the last service first.
+- **+ Upload** adds a registration, receipt, insurance card or other paper as a photo or PDF. Tap one to open it.
+
+How miles are estimated: when drivers enter the odometer it uses that. Fill-ups logged without an odometer each count as one full tank, which is **300 miles** for the Fords and the Ram unless you set a different number under **Set interval**.
+
+Files are kept in a private bucket. The tablet's public key can't list or open them; the app only gets links (good for one hour) after the PIN is checked.
+
 ## Scanning registrations and making QR codes
 
 1. Open **Reports**, enter the PIN, tap **Manage**, then **Scan registration**.
@@ -62,6 +79,7 @@ New trucks get an `MC-NAME` barcode. Re-scanning a truck that already has a barc
 
 - The tablet uses the anon key, which can only read active trucks, equipment and drivers, and add new fill-ups and tank loads.
 - Registrations (plates, VINs, owner names) are only readable with the PIN; the tablet's public key cannot see them.
+- Maintenance history, service intervals and uploaded documents are only readable with the PIN too.
 - Reports, deleting entries, managing the truck and driver lists, and the one-time import all go through database functions that check the 4-digit Reports PIN. The PIN is stored as a bcrypt hash, never in plain text.
 
 ## Conventions
