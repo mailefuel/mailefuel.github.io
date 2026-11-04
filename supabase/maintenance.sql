@@ -63,7 +63,7 @@ begin
       'code', a.code, 'name', a.name,
       'every_miles', p.every_miles, 'every_hours', p.every_hours, 'every_months', p.every_months,
       'miles_per_tank', p.miles_per_tank,
-      'make', r.make, 'model', r.model,
+      'make', r.make, 'model', r.model, 'owner', coalesce(r.owner, ''),
       'last', (select row_to_json(m) from (
                  select m.id, m.done_on, m.odometer, m.hours, m.work from public.maintenance m
                  where m.asset_id = a.id order by m.done_on desc, m.created_at desc limit 1) m),
@@ -93,7 +93,7 @@ begin
                'size_bytes', d.size_bytes, 'maint_id', d.maint_id, 'created_at', d.created_at) order by d.created_at desc), '[]'::json)
              from public.vehicle_docs d where d.asset_id = v_id),
     'registration', (select json_build_object('plate', r.plate, 'state', r.state, 'vin', r.vin, 'year', r.year,
-                       'make', r.make, 'model', r.model, 'expires', r.expires)
+                       'make', r.make, 'model', r.model, 'expires', r.expires, 'owner', r.owner)
                      from public.registrations r where r.asset_id = v_id)
   );
 end $$;
@@ -144,5 +144,19 @@ returns boolean language plpgsql security definer set search_path = public as $$
 begin
   if not public.pin_ok(p_pin) then raise exception 'wrong pin'; end if;
   delete from public.maintenance where id = p_id;
+  return true;
+end $$;
+
+-- Which company (LLC) a truck or machine is registered / titled to (PIN required).
+-- Works for equipment with no registration card too: it starts an empty registration row.
+create or replace function public.admin_set_owner(p_pin text, p_code text, p_owner text)
+returns boolean language plpgsql security definer set search_path = public as $$
+declare v_id uuid;
+begin
+  if not public.pin_ok(p_pin) then raise exception 'wrong pin'; end if;
+  select id into v_id from public.assets where code = p_code;
+  if v_id is null then raise exception 'no truck with barcode %', p_code; end if;
+  insert into public.registrations (asset_id, owner, updated_at) values (v_id, trim(coalesce(p_owner, '')), now())
+  on conflict (asset_id) do update set owner = excluded.owner, updated_at = now();
   return true;
 end $$;
