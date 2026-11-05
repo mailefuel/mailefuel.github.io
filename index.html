@@ -1650,6 +1650,7 @@
   // listener picks up fast bursts of keys. A scan ends with Enter/Tab, or after a short pause for
   // scanners set up with no suffix.
   var scanChars = [], scanTimes = [], scanPause = null;
+  var OFFICE_VIEWS = { reports: 1, truck: 1, labels: 1, register: 1 };
   function scanFlush(ev) {
     clearTimeout(scanPause);
     if (scanChars.length >= 4) {
@@ -1660,7 +1661,8 @@
     scanChars = []; scanTimes = [];
   }
   document.addEventListener("keydown", function (ev) {
-    if (view === "pin" || view === "labels" || view === "register") return;
+    // Office screens are for typing, so a scan never takes over the keys there
+    if (view === "pin" || OFFICE_VIEWS[view]) return;
     if (ev.target && ev.target.id === "scanCatch") return;
     var now = Date.now();
     if (scanTimes.length && now - scanTimes[scanTimes.length - 1] > 250) { scanChars = []; scanTimes = []; }
@@ -2143,6 +2145,13 @@
       pinInput = ""; renderPinScreen(); showPinError("Can't check PIN \u2014 no connection. Try again.");
     });
   }
+  // a keyboard works on the PIN pad too: digits, Backspace to erase, Esc to cancel
+  document.addEventListener("keydown", function (ev) {
+    if (view !== "pin" || ev.ctrlKey || ev.metaKey || ev.altKey) return;
+    if (/^[0-9]$/.test(ev.key)) { ev.preventDefault(); pressDigit(ev.key); }
+    else if (ev.key === "Backspace") { ev.preventDefault(); if (!verifying) { hidePinError(); pinInput = pinInput.slice(0, -1); renderPinScreen(); } }
+    else if (ev.key === "Escape") { ev.preventDefault(); var c = document.querySelector("#keypad .key.small"); if (c) c.click(); }
+  });
   function buildKeypad() {
     var pad = $("keypad"); pad.innerHTML = "";
     ["1","2","3","4","5","6","7","8","9"].forEach(function (d) {
