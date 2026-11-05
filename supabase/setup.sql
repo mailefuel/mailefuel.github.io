@@ -249,6 +249,12 @@ create table if not exists public.registrations (
 );
 create index if not exists registrations_vin on public.registrations (vin);
 alter table public.registrations enable row level security;
+-- Extra details edited on the truck page (Office > Trucks > tap a truck > Edit details)
+alter table public.registrations add column if not exists tank_gal numeric;     -- fuel tank size in gallons
+alter table public.registrations add column if not exists odometer numeric;     -- odometer typed in by the office
+alter table public.registrations add column if not exists hours numeric;        -- hour meter typed in by the office (equipment)
+alter table public.registrations add column if not exists reading_on date;      -- the day that odometer / hour meter was read
+alter table public.registrations add column if not exists notes text not null default '';
 
 -- Save a scanned registration. Creates the truck if the name is new (with an MC-NAME barcode),
 -- otherwise keeps its existing barcode so labels already printed keep working.
@@ -429,6 +435,9 @@ begin
       'every_miles', p.every_miles, 'every_hours', p.every_hours, 'every_months', p.every_months,
       'miles_per_tank', p.miles_per_tank,
       'make', r.make, 'model', r.model, 'owner', coalesce(r.owner, ''),
+      'tank_gal', r.tank_gal, 'odometer', r.odometer, 'hours', r.hours, 'reading_on', r.reading_on,
+      'photo', (select d.file_path from public.vehicle_docs d where d.asset_id = a.id and d.doc_type = 'Photo'
+                order by d.created_at desc limit 1),
       'last', (select row_to_json(m) from (
                  select m.id, m.done_on, m.odometer, m.hours, m.work from public.maintenance m
                  where m.asset_id = a.id order by m.done_on desc, m.created_at desc limit 1) m),
@@ -458,7 +467,9 @@ begin
                'size_bytes', d.size_bytes, 'maint_id', d.maint_id, 'created_at', d.created_at) order by d.created_at desc), '[]'::json)
              from public.vehicle_docs d where d.asset_id = v_id),
     'registration', (select json_build_object('plate', r.plate, 'state', r.state, 'vin', r.vin, 'year', r.year,
-                       'make', r.make, 'model', r.model, 'expires', r.expires, 'owner', r.owner)
+                       'make', r.make, 'model', r.model, 'expires', r.expires, 'owner', r.owner,
+                       'tank_gal', r.tank_gal, 'odometer', r.odometer, 'hours', r.hours, 'reading_on', r.reading_on,
+                       'notes', r.notes)
                      from public.registrations r where r.asset_id = v_id)
   );
 end $$;
@@ -523,5 +534,52 @@ begin
   if v_id is null then raise exception 'no truck with barcode %', p_code; end if;
   insert into public.registrations (asset_id, owner, updated_at) values (v_id, trim(coalesce(p_owner, '')), now())
   on conflict (asset_id) do update set owner = excluded.owner, updated_at = now();
+  return true;
+end $$;
+
+-- Edit a truck's or machine's details from its page (PIN required): VIN, plate, year / make / model,
+-- registration expiry, fuel tank size, the odometer or hour meter right now, notes, plus the usual
+-- driver, fuel and DEF on the truck itself. Blank fields are saved as blank, so this is a full edit.
+-- The barcode never changes, so printed labels keep scanning.
+create or replace function public.admin_save_vehicle(
+  p_pin text, p_code text,
+  p_vin text, p_plate text, p_state text, p_year text, p_make text, p_model text, p_expires text,
+  p_tank_gal numeric, p_odometer numeric, p_hours numeric, p_reading_on text, p_notes text,
+  p_driver text, p_fuel text, p_def boolean)
+returns boolean language plpgsql security definer set search_path = public as $$
+declare
+  v_id uuid; v_year int; v_expires date; v_on date;
+begin
+  if not public.pin_ok(p_pin) then raise exception 'wrong pin'; end if;
+  select id into v_id from public.assets where code = p_code;
+  if v_id is null then raise exception 'no truck with barcode %', p_code; end if;
+
+  if coalesce(p_year, '') ~ '^[0-9]{4}$' then v_year := p_year::int; end if;
+  begin
+    if coalesce(p_expires, '') ~ '^[0-9]{4}-[0-9]{2}-[0-9]{2}$' then v_expires := p_expires::date; end if;
+  exception when others then v_expires := null;
+  end;
+  begin
+    if coalesce(p_reading_on, '') ~ '^[0-9]{4}-[0-9]{2}-[0-9]{2}$' then v_on := p_reading_on::date; end if;
+  exception when others then v_on := null;
+  end;
+  if (coalesce(p_odometer, 0) > 0 or coalesce(p_hours, 0) > 0) and v_on is null then v_on := current_date; end if;
+
+  update public.assets set
+    driver = trim(coalesce(p_driver, '')),
+    fuel_type = case when p_fuel in ('Gas', 'Unleaded') then 'Gas' else 'Diesel' end,
+    uses_def = coalesce(p_def, uses_def)
+  where id = v_id;
+
+  insert into public.registrations (asset_id, plate, state, vin, year, make, model, expires,
+                                    tank_gal, odometer, hours, reading_on, notes, updated_at)
+  values (v_id, upper(trim(coalesce(p_plate, ''))), upper(trim(coalesce(p_state, ''))), upper(trim(coalesce(p_vin, ''))),
+          v_year, trim(coalesce(p_make, '')), trim(coalesce(p_model, '')), v_expires,
+          nullif(p_tank_gal, 0), nullif(p_odometer, 0), nullif(p_hours, 0), v_on, trim(coalesce(p_notes, '')), now())
+  on conflict (asset_id) do update set
+    plate = excluded.plate, state = excluded.state, vin = excluded.vin, year = excluded.year,
+    make = excluded.make, model = excluded.model, expires = excluded.expires,
+    tank_gal = excluded.tank_gal, odometer = excluded.odometer, hours = excluded.hours,
+    reading_on = excluded.reading_on, notes = excluded.notes, updated_at = now();
   return true;
 end $$;

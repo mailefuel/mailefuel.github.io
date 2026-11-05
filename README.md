@@ -9,6 +9,7 @@ Fuel log for Maile Concrete. Drivers use a shop tablet to log truck, equipment a
 | `index.html` | The whole app in one file. Open it in a browser on the tablet. |
 | `supabase/setup.sql` | Database setup: tables, security rules and the PIN-checked functions the app calls. |
 | `supabase/maintenance.sql` | Just the maintenance and documents tables and functions (also included in `setup.sql`). |
+| `supabase/fleet-details.sql` | One-time fill-in of the plates, VINs, expiry dates and odometers already known from the DMV papers, and puts every current vehicle under MAILE CONCRETE FLEET LLC. |
 | `supabase/rename.sql` | Just the rename functions (also included in `setup.sql`), for adding renaming to a database that's already set up. |
 | `supabase/functions/scan-receipt/index.ts` | Edge Function that reads a receipt photo with Gemini and returns vendor, address, date, time, line items and total. |
 | `supabase/functions/vehicle-docs/index.ts` | Edge Function that uploads, opens and deletes a truck's documents after checking the Reports PIN. |
@@ -62,6 +63,16 @@ Then in Office > **Trucks**, tap any truck or machine:
 - **Registered / titled to** picks which company (LLC) the truck or machine is registered to. Pick **Other company...** to add a new one. Office > Trucks search finds trucks by company too.
 - **+ Upload** adds a registration, receipt, insurance card or other paper as a photo or PDF. Tap one to open it.
 
+### Editing a truck's details and photo
+
+Each truck or machine page has a **Vehicle details** card at the top.
+
+- **Change photo** (or tap the photo itself) takes or picks a new picture. It replaces the old one on the truck page and on the Office > Trucks cards. **Remove photo** goes back to the built-in one.
+- **Edit details** changes the name, usual driver, fuel, DEF, VIN (serial number for equipment), plate (unit number for equipment), year, make, model, fuel tank size, the odometer (hour meter for equipment) right now and the day it was read, registration expiry and notes. The barcode never changes.
+- An odometer typed in here counts for the service estimate and the Last odometer box when it's newer than what drivers entered on a fill-up.
+
+To turn it on: run the latest `supabase/setup.sql`, and paste the latest `supabase/functions/vehicle-docs/index.ts` over the `vehicle-docs` function and deploy (photos are saved as a new "Photo" type). Then run `supabase/fleet-details.sql` once to fill in what's already known and set every vehicle to MAILE CONCRETE FLEET LLC.
+
 How miles are estimated: when drivers enter the odometer it uses that. Fill-ups logged without an odometer each count as one full tank, which is **300 miles** for the Fords and the Ram unless you set a different number under **Set interval**.
 
 Files are kept in a private bucket. The tablet's public key can't list or open them; the app only gets links (good for one hour) after the PIN is checked.
@@ -80,7 +91,7 @@ New trucks get an `MC-NAME` barcode. Re-scanning a truck that already has a barc
 
 - The tablet uses the anon key, which can only read active trucks, equipment and drivers, and add new fill-ups and tank loads.
 - Registrations (plates, VINs, owner names) are only readable with the PIN; the tablet's public key cannot see them.
-- Maintenance history, service intervals and uploaded documents are only readable with the PIN too.
+- Maintenance history, service intervals, uploaded documents and photos, and the details on each truck page (VIN, plate, tank size, odometer) are only readable and editable with the PIN too.
 - Reports, deleting entries, managing the truck and driver lists, and the one-time import all go through database functions that check the 4-digit Reports PIN. The PIN is stored as a bcrypt hash, never in plain text.
 
 ## Conventions
