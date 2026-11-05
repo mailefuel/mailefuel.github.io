@@ -67,7 +67,7 @@ Then in Office > **Trucks**, tap any truck or machine:
 
 Each truck or machine page has a **Vehicle details** card at the top.
 
-- **Change photo** (or tap the photo itself) takes or picks a new picture. It replaces the old one on the truck page and on the Office > Trucks cards. **Remove photo** goes back to the built-in one.
+- **Change photo** (or tap the photo itself) takes or picks a new picture, then lets you drag it into place, pinch or slide to zoom, and turn it before saving. **Adjust photo** does the same for the photo that's already there. The saved photo replaces the old one on the truck page and on the Office > Trucks cards. **Remove photo** goes back to the built-in one.
 - **Edit details** changes the name, usual driver, fuel, DEF, VIN (serial number for equipment), plate (unit number for equipment), year, make, model, fuel tank size, the odometer (hour meter for equipment) right now and the day it was read, registration expiry and notes. The barcode never changes.
 - An odometer typed in here counts for the service estimate and the Last odometer box when it's newer than what drivers entered on a fill-up.
 

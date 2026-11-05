@@ -704,6 +704,17 @@
   .det-v.mono, .input.mono { font-family: ui-monospace, Menlo, Consolas, monospace; letter-spacing: .5px; }
   .svc-form .grid .span-2 { grid-column: span 2; }
   .td-photo.can-edit { cursor: pointer; position: relative; }
+  /* photo framer: drag to move, pinch / wheel / slider to zoom */
+  .crop-view { position: fixed; inset: 0; z-index: 70; background: rgba(5,8,25,0.9); display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 14px; padding: 16px; animation: pop .3s var(--spring) both; }
+  .crop-title { font-size: 15px; font-weight: 600; color: #FFFFFF; text-align: center; }
+  .crop-frame { position: relative; width: min(92vw, 760px); aspect-ratio: 3 / 2; overflow: hidden; border-radius: 18px; background: #0d1430; box-shadow: 0 0 0 3px rgba(255,255,255,0.85), 0 20px 60px rgba(0,0,0,0.5); touch-action: none; cursor: grab; }
+  .crop-frame.dragging { cursor: grabbing; }
+  .crop-frame img { position: absolute; left: 50%; top: 50%; max-width: none; transform-origin: center center; user-select: none; -webkit-user-drag: none; pointer-events: none; }
+  .crop-frame::after { content: ""; position: absolute; inset: 0; pointer-events: none; background-image: linear-gradient(rgba(255,255,255,0.22) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.22) 1px, transparent 1px); background-size: 33.34% 33.34%; background-position: -1px -1px; opacity: 0; transition: opacity .2s; }
+  .crop-frame.dragging::after { opacity: 1; }
+  .crop-tools { display: flex; align-items: center; gap: 12px; width: min(92vw, 760px); flex-wrap: wrap; justify-content: center; }
+  .crop-tools input[type=range] { flex: 1 1 220px; accent-color: #E4ECFA; height: 28px; }
+  .crop-tools .zl { font-size: 13px; color: var(--ink2); font-weight: 600; }
   .td-photo.can-edit::after { content: "\1F4F7"; position: absolute; right: 8px; bottom: 8px; width: 34px; height: 34px; border-radius: 50%; display: grid; place-items: center; font-size: 16px; background: rgba(10,15,40,0.65); border: 1px solid rgba(255,255,255,0.35); }
   .owner-row { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 10px; margin-bottom: 12px; }
   .owner-row select { flex: 1 1 200px; width: auto; } .owner-row input { flex: 1 1 200px; width: auto; }
@@ -1096,7 +1107,7 @@
     <div class="chart-grid" id="tdMaint">
       <div class="card span2" id="detCard">
         <div class="chart-head"><div class="sec-title">Vehicle details</div>
-          <div class="det-btns"><button class="btn-gray" id="btnPhoto">&#128247; Change photo</button><button class="btn-export" id="btnDetEdit">&#9998; Edit details</button></div></div>
+          <div class="det-btns"><button class="btn-gray" id="btnPhotoAdjust">&#10021; Adjust photo</button><button class="btn-gray" id="btnPhoto">&#128247; Change photo</button><button class="btn-export" id="btnDetEdit">&#9998; Edit details</button></div></div>
         <input type="file" id="photoFile" accept="image/*" class="hidden" />
         <div id="photoMsg" class="banner hidden" style="margin:0 0 12px;"></div>
         <div class="det-grid" id="detGrid"></div>
@@ -2949,7 +2960,7 @@
         tph.classList.add("can-edit"); tph.title = "Change photo";
         tph.addEventListener("click", function () { $("photoFile").click(); });
         timg.alt = T.name;
-        timg.onload = function () { if (tph.isConnected) { tph.innerHTML = ""; tph.appendChild(timg); tph.classList.add("has-photo"); } };
+        timg.onload = function () { if (tph.isConnected) { tph.innerHTML = ""; tph.appendChild(timg); tph.classList.add("has-photo"); $("btnPhotoAdjust").classList.remove("hidden"); } };
         timg.src = photoUrl(photoCode);
       }
     }
@@ -3380,6 +3391,8 @@
     $("btnDetEdit").disabled = !!broken || !C || !!(C && C.error);
     $("btnPhoto").disabled = !!broken || !C;
     $("btnPhoto").innerHTML = "&#128247; Change photo";
+    var tph = $("tdName").querySelector(".td-photo");
+    $("btnPhotoAdjust").classList.toggle("hidden", !!broken || !C || !(tph && tph.classList.contains("has-photo")));
     var reset = $("btnPhotoReset");
     if (!reset) {
       reset = document.createElement("button"); reset.className = "btn-gray"; reset.id = "btnPhotoReset";
@@ -3490,23 +3503,133 @@
     b.disabled = false; b.textContent = "Save details";
   });
   $("btnPhoto").addEventListener("click", function () { $("photoFile").click(); });
-  $("photoFile").addEventListener("change", async function () {
+  $("btnPhotoAdjust").addEventListener("click", function () {
+    var info = truckInfo(detailTruck); if (!info) return;
+    openCropper(photoUrl(info.code), true);
+  });
+  $("photoFile").addEventListener("change", function () {
     var file = this.files && this.files[0]; this.value = "";
-    var info = truckInfo(detailTruck); if (!file || !info) return;
+    if (!file || !truckInfo(detailTruck)) return;
+    if (!/^image\//.test(file.type)) { var m = $("photoMsg"); m.className = "banner err"; m.style.margin = "0 0 12px"; m.textContent = "That isn't a picture. Pick a photo."; return; }
+    openCropper(URL.createObjectURL(file), false);
+  });
+
+  // Photo framer: the frame is the same 3:2 shape as the photo at the top of the truck page.
+  // Drag to move, pinch / mouse wheel / slider to zoom, turn 90 degrees. Saves a 1200 x 800 JPEG.
+  var CROP_W = 1200, CROP_H = 800;
+  function openCropper(src, existing) {
+    var img = new Image();
+    if (existing) img.crossOrigin = "anonymous";
+    img.onerror = function () {
+      var m = $("photoMsg"); m.className = "banner err"; m.style.margin = "0 0 12px";
+      m.textContent = existing ? "Couldn't open the current photo to adjust it. Tap Change photo and pick it again." : "Couldn't open that picture.";
+    };
+    img.onload = function () { buildCropper(img, existing ? null : src); };
+    img.src = src;
+  }
+  function buildCropper(img, blobUrl) {
+    var ov = document.createElement("div"); ov.className = "crop-view";
+    ov.innerHTML = '<div class="crop-title">Drag the photo to move it. Pinch or use the slider to zoom.</div>' +
+      '<div class="crop-frame"></div>' +
+      '<div class="crop-tools"><span class="zl">Zoom</span><input type="range" min="1" max="4" step="0.01" value="1" aria-label="Zoom" />' +
+      '<button class="btn-gray" data-a="rot">&#8635; Turn</button><button class="btn-gray" data-a="reset">Reset</button></div>' +
+      '<div class="row-btns"><button class="btn-gray" data-a="cancel">Cancel</button><button class="btn-export" data-a="save">Save photo</button></div>';
+    document.body.appendChild(ov);
+    var frame = ov.querySelector(".crop-frame"), slider = ov.querySelector("input[type=range]");
+    frame.appendChild(img);
+    var st = { z: 1, x: 0, y: 0, rot: 0 }, ptrs = {}, pinch = null, drag = null;
+    function dims() { var r = frame.getBoundingClientRect(); return { w: r.width, h: r.height }; }
+    function imgWH() { var odd = st.rot % 180 !== 0; return { w: odd ? img.naturalHeight : img.naturalWidth, h: odd ? img.naturalWidth : img.naturalHeight }; }
+    function base() { var f = dims(), i = imgWH(); return Math.max(f.w / i.w, f.h / i.h); }   // smallest size that still fills the frame
+    function clamp() {
+      var f = dims(), i = imgWH(), k = base() * st.z;
+      var mx = Math.max(0, (i.w * k - f.w) / 2), my = Math.max(0, (i.h * k - f.h) / 2);
+      st.x = Math.max(-mx, Math.min(mx, st.x)); st.y = Math.max(-my, Math.min(my, st.y));
+    }
+    function draw() {
+      clamp();
+      var k = base() * st.z;
+      img.style.width = img.naturalWidth + "px"; img.style.height = img.naturalHeight + "px";
+      img.style.transform = "translate(-50%, -50%) translate(" + st.x + "px, " + st.y + "px) rotate(" + st.rot + "deg) scale(" + k + ")";
+      slider.value = st.z;
+    }
+    function zoomTo(z, cx, cy) {   // keep the point under the fingers / cursor in place
+      z = Math.max(1, Math.min(4, z));
+      var f = dims(), ox = (cx == null ? 0 : cx - f.w / 2), oy = (cy == null ? 0 : cy - f.h / 2), r = z / st.z;
+      st.x = ox - (ox - st.x) * r; st.y = oy - (oy - st.y) * r; st.z = z; draw();
+    }
+    function local(ev) { var r = frame.getBoundingClientRect(); return { x: ev.clientX - r.left, y: ev.clientY - r.top }; }
+    frame.addEventListener("pointerdown", function (ev) {
+      frame.setPointerCapture(ev.pointerId); ptrs[ev.pointerId] = local(ev); frame.classList.add("dragging");
+      var ids = Object.keys(ptrs);
+      if (ids.length === 1) drag = { x: ev.clientX - st.x, y: ev.clientY - st.y };
+      else if (ids.length === 2) {
+        var a = ptrs[ids[0]], b = ptrs[ids[1]];
+        pinch = { d: Math.hypot(a.x - b.x, a.y - b.y) || 1, z: st.z }; drag = null;
+      }
+    });
+    frame.addEventListener("pointermove", function (ev) {
+      if (!ptrs[ev.pointerId]) return;
+      ptrs[ev.pointerId] = local(ev);
+      var ids = Object.keys(ptrs);
+      if (pinch && ids.length >= 2) {
+        var a = ptrs[ids[0]], b = ptrs[ids[1]], d = Math.hypot(a.x - b.x, a.y - b.y);
+        zoomTo(pinch.z * d / pinch.d, (a.x + b.x) / 2, (a.y + b.y) / 2);
+      } else if (drag) { st.x = ev.clientX - drag.x; st.y = ev.clientY - drag.y; draw(); }
+    });
+    function up(ev) {
+      delete ptrs[ev.pointerId];
+      var ids = Object.keys(ptrs);
+      if (ids.length < 2) pinch = null;
+      if (ids.length === 1) { var p = ptrs[ids[0]], r = frame.getBoundingClientRect(); drag = { x: p.x + r.left - st.x, y: p.y + r.top - st.y }; }
+      if (!ids.length) { drag = null; frame.classList.remove("dragging"); }
+    }
+    frame.addEventListener("pointerup", up); frame.addEventListener("pointercancel", up);
+    frame.addEventListener("wheel", function (ev) { ev.preventDefault(); var p = local(ev); zoomTo(st.z * (ev.deltaY < 0 ? 1.1 : 1 / 1.1), p.x, p.y); }, { passive: false });
+    slider.addEventListener("input", function () { zoomTo(Number(this.value)); });
+    function onResize() { draw(); }
+    window.addEventListener("resize", onResize);
+    function close() { window.removeEventListener("resize", onResize); ov.remove(); if (blobUrl) URL.revokeObjectURL(blobUrl); }
+    ov.addEventListener("click", function (ev) {
+      var a = ev.target.closest("[data-a]"); a = a && a.getAttribute("data-a");
+      if (a === "rot") { st.rot = (st.rot + 90) % 360; st.x = 0; st.y = 0; draw(); }
+      else if (a === "reset") { st = { z: 1, x: 0, y: 0, rot: st.rot }; draw(); }
+      else if (a === "cancel") close();
+      else if (a === "save") {
+        var f = dims(), k = base() * st.z, out = CROP_W / f.w;
+        var c = document.createElement("canvas"); c.width = CROP_W; c.height = CROP_H;
+        var ctx = c.getContext("2d");
+        ctx.fillStyle = "#1b2340"; ctx.fillRect(0, 0, CROP_W, CROP_H);
+        ctx.translate(CROP_W / 2 + st.x * out, CROP_H / 2 + st.y * out);
+        ctx.rotate(st.rot * Math.PI / 180);
+        ctx.scale(k * out, k * out);
+        ctx.imageSmoothingQuality = "high";
+        ctx.drawImage(img, -img.naturalWidth / 2, -img.naturalHeight / 2);
+        var b64;
+        try { b64 = c.toDataURL("image/jpeg", 0.88).split(",")[1]; }
+        catch (e) { close(); var m = $("photoMsg"); m.className = "banner err"; m.style.margin = "0 0 12px"; m.textContent = "Couldn't adjust the current photo here. Tap Change photo and pick it again."; return; }
+        close();
+        savePhoto(b64);
+      }
+    });
+    requestAnimationFrame(draw);
+  }
+  async function savePhoto(b64) {
+    var info = truckInfo(detailTruck); if (!info) return;
     var code = info.code, msg = $("photoMsg"), b = $("btnPhoto");
     var old = (((vdCache[code] || {}).data || {}).docs || []).filter(function (d) { return d.doc_type === "Photo"; });
-    msg.className = "banner info"; msg.style.margin = "0 0 12px"; msg.textContent = "Uploading the new photo…"; b.disabled = true;
+    msg.className = "banner info"; msg.style.margin = "0 0 12px"; msg.textContent = "Saving the photo…"; b.disabled = true;
     try {
-      await uploadDoc(code, file, "Photo", "Photo " + fmtDay(todayYmd()));
+      await docsFn({ action: "upload", code: code, docType: "Photo", title: "Photo " + fmtDay(todayYmd()), fileName: "photo.jpg", mime: "image/jpeg", data: b64 });
       // only the newest photo is used, so the old uploaded ones are removed
       for (var i = 0; i < old.length; i++) { try { await docsFn({ action: "delete", id: old[i].id }); } catch (e) {} }
       await refreshVehicle(code);
-      msg.className = "banner ok"; msg.textContent = "✓ New photo saved for " + info.name;
+      msg.className = "banner ok"; msg.textContent = "✓ Photo saved for " + info.name;
       setTimeout(function () { msg.classList.add("hidden"); }, 2500);
       renderAll();
-    } catch (e) { msg.className = "banner err"; msg.textContent = "Couldn't upload the photo: " + (e.message || e); }
+    } catch (e) { msg.className = "banner err"; msg.textContent = "Couldn't save the photo: " + (e.message || e); }
     b.disabled = false;
-  });
+  }
   async function removeUploadedPhoto() {
     var info = truckInfo(detailTruck); if (!info) return;
     if (!photoDelSure) {
