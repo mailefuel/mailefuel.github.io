@@ -411,7 +411,6 @@
   .fleet-tag { font-size: 11.5px; font-weight: 600; padding: 3px 9px; border-radius: 999px; background: rgba(255,255,255,0.12); border: 1px solid rgba(255,255,255,0.22); }
   .fleet-stats { display: grid; grid-template-columns: 1fr 1fr; gap: 6px 10px; font-size: 12px; color: var(--ink2); }
   .fleet-stats b { display: block; font-size: 15px; font-weight: 600; color: var(--ink); }
-  section.wgIn .fleet-grid > * { animation: bounceIn .75s cubic-bezier(.3,1.3,.5,1) both; }
   @media (max-width: 520px) { .fleet-grid { grid-template-columns: 1fr 1fr; } .fleet-photo { height: 90px; } }
   /* photos on the truck cards */
   .fleet-photo.has-photo { padding: 0; background: #1b2340; }
@@ -727,6 +726,14 @@
   .doc-view { position: fixed; inset: 0; z-index: 60; background: rgba(5,8,25,0.88); display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 20px; animation: pop .3s var(--spring) both; }
   .doc-view img { max-width: 100%; max-height: calc(100vh - 110px); border-radius: 12px; box-shadow: 0 20px 60px rgba(0,0,0,0.5); }
   .doc-view .row-btns { display: flex; gap: 10px; margin-top: 14px; }
+
+  /* Office > Trucks opening: the cards pour out of the Maile logo (genie effect, driven by genieIn() in the script).
+     Other card animations are switched off while it runs so they don't fight it. */
+  .fleet-grid.genie > *, .fleet-grid.genie-wait > * { animation: none !important; }
+  .fleet-grid.genie-wait > * { opacity: 0; }
+  .fleet-grid.genie { overflow: visible; }
+  .logo-plate.burst .logo { animation: logoBurst .7s var(--spring) both; }
+  @keyframes logoBurst { 0% { transform: none; filter: drop-shadow(0 2px 4px rgba(0,0,0,0.40)); } 30% { transform: scale(1.14, .9); filter: drop-shadow(0 0 18px rgba(255,255,255,0.75)); } 60% { transform: scale(.96, 1.05); } 100% { transform: none; filter: drop-shadow(0 2px 4px rgba(0,0,0,0.40)); } }
 </style>
 </head>
 <body>
@@ -4078,7 +4085,39 @@
     clearTimeout(el._sw); el._sw = setTimeout(function () { el.classList.remove("swipe-r", "swipe-l"); }, 1400);
   }
   // Opening Office swipes in whichever truck list is showing (cards or the table rows).
-  function swipeOffice() { swipeIn(officeTab === "trucks" ? $("fleetGrid") : $("truckBody"), 1); }
+  function swipeOffice() { if (officeTab === "trucks") genieIn($("fleetGrid")); else swipeIn($("truckBody"), 1); }
+  // Genie: each truck card starts squeezed into the Maile logo and pours down into its spot, the nearest first,
+  // the way a window opens out of the Dock on a Mac. The logo gives a little squash as they come out.
+  function genieIn(grid) {
+    if (!grid || !grid.children.length) return;
+    clearTimeout(grid._sw); grid.classList.remove("swipe-r", "swipe-l", "anim", "reveal");
+    var logo = document.querySelector(".logo"), plate = document.querySelector(".logo-plate");
+    if (lessMotion || !logo || !grid.animate) { swipeIn(grid, 1); return; }
+    (grid._genie || []).forEach(function (a) { try { a.cancel(); } catch (e) {} });
+    grid.classList.add("genie-wait");
+    // wait a frame so the screen has its final layout before measuring where each card lands
+    requestAnimationFrame(function () {
+      var L = logo.getBoundingClientRect(), lx = L.left + L.width / 2, ly = L.top + L.height * 0.6;
+      var cards = Array.prototype.slice.call(grid.children), anims = [], longest = 0;
+      cards.forEach(function (c, i) {
+        var r = c.getBoundingClientRect(), dx = lx - (r.left + r.width / 2), dy = ly - (r.top + r.height / 2);
+        var sx = Math.max(0.04, Math.min(0.3, L.width * 0.5 / r.width));
+        var delay = Math.min(i, 16) * 55, dur = 900 + Math.min(i, 16) * 12;
+        longest = Math.max(longest, delay + dur);
+        anims.push(c.animate([
+          { transform: "translate(" + dx + "px," + dy + "px) scale(" + sx + ",0.04)", opacity: 0, borderRadius: "50%", offset: 0 },
+          { transform: "translate(" + dx * 0.55 + "px," + dy * 0.7 + "px) scale(" + (sx * 1.3) + ",0.85)", opacity: 1, borderRadius: "40%", offset: 0.38 },
+          { transform: "translate(" + dx * 0.08 + "px," + dy * 0.05 + "px) scale(0.92,1.06)", borderRadius: "22px", offset: 0.72 },
+          { transform: "translate(0,0) scale(1.03,0.97)", offset: 0.88 },
+          { transform: "none", opacity: 1, borderRadius: "18px", offset: 1 }
+        ], { duration: dur, delay: delay, easing: "cubic-bezier(.22,.9,.3,1)", fill: "backwards" }));
+      });
+      grid._genie = anims;
+      grid.classList.remove("genie-wait"); grid.classList.add("genie");
+      if (plate) { plate.classList.remove("burst"); void plate.offsetWidth; plate.classList.add("burst"); setTimeout(function () { plate.classList.remove("burst"); }, 800); }
+      clearTimeout(grid._gt); grid._gt = setTimeout(function () { grid.classList.remove("genie"); grid._genie = []; }, longest + 60);
+    });
+  }
   var FLEET_KINDS = ["all", "Truck", "Equipment"];
   function setFleetKind(kind, dir) {
     fleetKind = kind;
