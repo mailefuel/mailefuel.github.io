@@ -16,7 +16,7 @@
 const BUCKET = "vehicle-docs";
 const MAX_BYTES = 15 * 1024 * 1024; // 15 MB per file
 const LINK_SECONDS = 60 * 60;       // opened links work for 1 hour
-const DOC_TYPES = ["Registration", "Receipt", "Insurance", "Inspection", "Title", "Other"];
+const DOC_TYPES = ["Registration", "Receipt", "Insurance", "Inspection", "Title", "Photo", "Other"];  // "Photo" = the picture at the top of the truck page
 
 const cors = {
   "Access-Control-Allow-Origin": "*",

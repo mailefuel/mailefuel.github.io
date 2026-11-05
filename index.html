@@ -693,6 +693,18 @@
   .td-photo.has-photo { width: 240px; height: 160px; border-radius: 18px; overflow: hidden; border: 1px solid var(--edge); box-shadow: 0 0 0 4px rgba(255,255,255,0.18), 0 14px 34px rgba(10,15,40,0.35); background: #1b2340; animation: pop .5s var(--spring) both; }
   .td-photo.has-photo img { width: 100%; height: 100%; object-fit: cover; display: block; }
   @media (max-width: 640px) { .td-photo.has-photo { width: 150px; height: 100px; border-radius: 14px; } }
+  .det-btns { display: flex; gap: 8px; flex-wrap: wrap; justify-content: flex-end; }
+  .det-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 12px 18px; }
+  #detForm .input { font-size: 16px; }
+  .det-item { min-width: 0; }
+  .det-k { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: .06em; color: var(--ink3); }
+  .det-v { font-size: 15.5px; font-weight: 600; margin-top: 2px; overflow-wrap: anywhere; }
+  .det-v.none { color: var(--ink3); font-weight: 400; }
+  .det-v small { display: block; font-size: 12px; font-weight: 400; color: var(--ink3); }
+  .det-v.mono, .input.mono { font-family: ui-monospace, Menlo, Consolas, monospace; letter-spacing: .5px; }
+  .svc-form .grid .span-2 { grid-column: span 2; }
+  .td-photo.can-edit { cursor: pointer; position: relative; }
+  .td-photo.can-edit::after { content: "\1F4F7"; position: absolute; right: 8px; bottom: 8px; width: 34px; height: 34px; border-radius: 50%; display: grid; place-items: center; font-size: 16px; background: rgba(10,15,40,0.65); border: 1px solid rgba(255,255,255,0.35); }
   .owner-row { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 10px; margin-bottom: 12px; }
   .owner-row select { flex: 1 1 200px; width: auto; } .owner-row input { flex: 1 1 200px; width: auto; }
   .reg-line { font-size: 13px; color: var(--ink2); margin-bottom: 12px; line-height: 1.5; }
@@ -1082,6 +1094,36 @@
 
     <!-- maintenance + documents (PIN-checked, loaded per truck) -->
     <div class="chart-grid" id="tdMaint">
+      <div class="card span2" id="detCard">
+        <div class="chart-head"><div class="sec-title">Vehicle details</div>
+          <div class="det-btns"><button class="btn-gray" id="btnPhoto">&#128247; Change photo</button><button class="btn-export" id="btnDetEdit">&#9998; Edit details</button></div></div>
+        <input type="file" id="photoFile" accept="image/*" class="hidden" />
+        <div id="photoMsg" class="banner hidden" style="margin:0 0 12px;"></div>
+        <div class="det-grid" id="detGrid"></div>
+        <div class="svc-form hidden" id="detForm">
+          <div class="grid">
+            <div class="span-2"><label class="label" for="dtName">Name</label><input class="input small" id="dtName" autocomplete="off" /></div>
+            <div><label class="label" for="dtDriver">Usual driver</label><select class="input small" id="dtDriver"></select></div>
+            <div><label class="label" for="dtFuel">Fuel</label><select class="input small" id="dtFuel"><option>Diesel</option><option>Gas</option></select></div>
+            <div class="span-2"><label class="label" for="dtVin" id="dtVinLabel">VIN</label><input class="input small mono" id="dtVin" maxlength="20" autocomplete="off" /></div>
+            <div><label class="label" for="dtPlate" id="dtPlateLabel">Plate</label><input class="input small" id="dtPlate" autocomplete="off" /></div>
+            <div><label class="label" for="dtState">State</label><input class="input small" id="dtState" maxlength="2" placeholder="NV" autocomplete="off" /></div>
+            <div><label class="label" for="dtYear">Year</label><input class="input small" id="dtYear" type="tel" inputmode="numeric" maxlength="4" autocomplete="off" /></div>
+            <div><label class="label" for="dtMake">Make</label><input class="input small" id="dtMake" autocomplete="off" /></div>
+            <div class="span-2"><label class="label" for="dtModel">Model</label><input class="input small" id="dtModel" autocomplete="off" /></div>
+            <div><label class="label" for="dtTank">Fuel tank (gal)</label><input class="input small" id="dtTank" type="tel" inputmode="decimal" placeholder="e.g. 48" autocomplete="off" /></div>
+            <div><label class="label" for="dtReading" id="dtReadingLabel">Odometer now</label><input class="input small" id="dtReading" type="tel" inputmode="numeric" autocomplete="off" /></div>
+            <div><label class="label" for="dtReadingOn">Read on</label><input class="input small" id="dtReadingOn" type="date" /></div>
+            <div><label class="label" for="dtExpires">Registration expires</label><input class="input small" id="dtExpires" type="date" /></div>
+            <div class="span-2"><label class="label chk" style="margin-top:22px;"><input type="checkbox" id="dtDef" /> Uses DEF</label></div>
+            <div class="span-2"><label class="label" for="dtNotes">Notes</label><input class="input small" id="dtNotes" placeholder="e.g. spare key in the office" autocomplete="off" /></div>
+          </div>
+          <div class="hint left" id="dtHint"></div>
+          <div id="dtErr" class="banner err hidden" style="margin:12px 0 0;"></div>
+          <div class="row-btns"><button class="btn-gray" id="btnDtCancel">Cancel</button><button class="btn-export" id="btnDtSave">Save details</button></div>
+        </div>
+      </div>
+
       <div class="card span2" id="svcCard">
         <div class="chart-head"><div class="sec-title">Next service</div><button class="btn-gray" id="btnSvcPlan">Set interval</button></div>
         <div id="svcBody"></div>
@@ -1740,7 +1782,7 @@
         if (t.code) {
           var ph = b.querySelector(".pp-img"), img = new Image();
           img.alt = ""; img.onload = function () { ph.innerHTML = ""; ph.appendChild(img); ph.classList.add("has-photo"); };
-          img.src = "photos/" + encodeURIComponent(t.code) + ".jpg";
+          img.src = photoUrl(t.code);
         }
         b.addEventListener("click", function () { selectAsset(t); });
         list.appendChild(b);
@@ -2309,7 +2351,7 @@
     var bodies = list.map(function (t) { return fleetBodyHtml(t, stats); });
     // Same trucks in the same order as what's showing (e.g. data arriving a moment after Office opens):
     // update the text on the cards in place, so photos don't flash back to icons and the cards don't swipe in twice.
-    var key = list.map(function (t) { return t.code + "|" + t.name + "|" + t.kind; }).join(",");
+    var key = list.map(function (t) { return t.code + "|" + t.name + "|" + t.kind + "|" + (hasUploadedPhoto(t.code) ? uploadedPhotoPath(t.code) : ""); }).join(",");
     if (grid._key === key && grid.children.length === list.length) {
       list.forEach(function (t, i) {
         var b = grid.children[i], body = b.querySelector(".fleet-body");
@@ -2321,13 +2363,13 @@
     grid._key = key; grid.innerHTML = "";
     list.forEach(function (t, i) {
       var b = document.createElement("button"); b.className = "fleet-card";
-      var known = t.code && FLEET_PHOTO[t.code] === 1, photoSrc = t.code ? "photos/" + encodeURIComponent(t.code) + ".jpg" : "";
+      var up = hasUploadedPhoto(t.code), known = up || (t.code && FLEET_PHOTO[t.code] === 1), photoSrc = t.code ? photoUrl(t.code) : "";
       b.innerHTML =
         '<div class="fleet-photo' + (known ? " has-photo" : "") + '">' + (known ? '<img alt="' + esc(t.name) + '" src="' + photoSrc + '" />' : kindIcon(t.kind, t.kind === "Truck" ? 62 : 70)) + '</div><div class="fleet-check">\u2713</div>' +
         '<div class="fleet-body">' + bodies[i] + '</div>';
       b.querySelector(".fleet-body")._html = bodies[i];
       // the machine's own photo, if one is saved as photos/<barcode>.jpg next to this page (checked once per visit)
-      if (t.code && FLEET_PHOTO[t.code] == null) {
+      if (!up && t.code && FLEET_PHOTO[t.code] == null) {
         var ph = b.querySelector(".fleet-photo"), img = new Image();
         img.alt = t.name;
         img.onload = function () { FLEET_PHOTO[t.code] = 1; ph.innerHTML = ""; ph.appendChild(img); ph.classList.add("has-photo"); };
@@ -2628,7 +2670,7 @@
     if (info.code) {
       var ph = card.querySelector(".top-photo"), img = new Image(); img.className = "ph"; img.alt = top;
       img.onload = function () { if (ph.isConnected) { ph.innerHTML = ""; ph.appendChild(img); } };
-      img.src = "photos/" + encodeURIComponent(info.code) + ".jpg";
+      img.src = photoUrl(info.code);
     }
     card.onclick = function () { detailTruck = top; setView("truck"); };
   }
@@ -2896,15 +2938,19 @@
     if (info) loadVehicleDetail(info.code);
     renderVehicleExtras();
     // the vehicle's own photo (photos/<barcode>.jpg) at the top, or its truck / equipment icon until it has one
+    // An uploaded photo (Change photo) wins over photos/<barcode>.jpg. Tap the photo to change it.
     var photoCode = info && info.code ? info.code : "";
-    if ($("tdName").getAttribute("data-for") !== T.name + "|" + photoCode) {
-      $("tdName").setAttribute("data-for", T.name + "|" + photoCode);
+    var photoKey = T.name + "|" + photoCode + "|" + (hasUploadedPhoto(photoCode) ? uploadedPhotoPath(photoCode) : "");
+    if ($("tdName").getAttribute("data-for") !== photoKey) {
+      $("tdName").setAttribute("data-for", photoKey);
       $("tdName").innerHTML = '<span class="td-photo">' + kindIcon(T.kind, 46, true) + '</span><span class="td-title">' + esc(T.name) + '</span>';
       if (photoCode) {
         var tph = $("tdName").querySelector(".td-photo"), timg = new Image();
+        tph.classList.add("can-edit"); tph.title = "Change photo";
+        tph.addEventListener("click", function () { $("photoFile").click(); });
         timg.alt = T.name;
         timg.onload = function () { if (tph.isConnected) { tph.innerHTML = ""; tph.appendChild(timg); tph.classList.add("has-photo"); } };
-        timg.src = "photos/" + encodeURIComponent(photoCode) + ".jpg";
+        timg.src = photoUrl(photoCode);
       }
     }
     var drv = Object.keys(T.drivers);
@@ -2916,7 +2962,7 @@
       card("Miles tracked", fmtInt(T.miles), "", "p") +
       card("Fuel", fmtGal(T.fuelGal) + " gal", T.cansGal ? "+ " + fmtGal(T.cansGal) + " gal via cans" : (T.miles ? (Math.round((T.fuelGal / T.miles) * 1000) / 10) + " gal per 100 mi" : ""), "a") +
       card("DEF", fmtGal(T.defGal) + " gal", T.fuelGal ? (Math.round((T.defGal / T.fuelGal) * 1000) / 10) + "% of fuel" : "", "b") +
-      card("Last odometer", T.lastOdo != null ? fmtInt(T.lastOdo) : dash(), T.lastTs ? fmtDate(T.lastTs) : "");
+      lastReadingCard(T, info);
 
     var rows = allFillups().filter(function (e) { return canonTruck(e.truck) === T.name; });
     var asc = rows.slice().reverse().filter(function (e) { return stats.byId[e.id] && stats.byId[e.id].mpg != null; });
@@ -2941,6 +2987,14 @@
     afterRedraw($("viewTruck"));
   }
 
+  // Last odometer (or hour meter for equipment): the newest of what drivers entered and what the office typed in
+  function lastReadingCard(T, info) {
+    var sv = info ? svcOf(info) : {}, on = sv.reading_on ? String(sv.reading_on).slice(0, 10) + "T12:00:00" : null;
+    if (T.kind !== "Truck" && sv.hours > 0 && T.lastOdo == null) return card("Hour meter", fmtInt(sv.hours) + " hr", on ? "entered for " + fmtDate(on) : "");
+    if (sv.odometer > 0 && on && (T.lastOdo == null || tsNum(on) > tsNum(T.lastTs))) return card("Last odometer", fmtInt(sv.odometer), "entered for " + fmtDate(on));
+    return card("Last odometer", T.lastOdo != null ? fmtInt(T.lastOdo) : dash(), T.lastTs ? fmtDate(T.lastTs) : "");
+  }
+
   // ---------- maintenance + documents (Office > tap a truck) ----------
   // Service plans and last services come from admin_fleet_service, one truck's history and documents from
   // admin_vehicle_detail; both need the PIN. Files go through the vehicle-docs Edge Function, which checks the
@@ -2955,6 +3009,7 @@
       var rows = (await sbRpc("admin_fleet_service", { p_pin: sessionPin })) || [];
       svc = {}; rows.forEach(function (r) { svc[r.code] = r; });
       svcLoaded = true; svcError = "";
+      await signFleetPhotos();
     } catch (e) {
       var m = String(e && e.message || e);
       svcError = /admin_fleet_service|function|schema cache/i.test(m) ? "setup" : m;
@@ -2989,7 +3044,15 @@
     else R.odoReading = fills[lastOdoIdx];
     var after = lastOdoIdx >= 0 ? fills.length - 1 - lastOdoIdx : 0;
     if (R.odoReading) { R.fillsAfterOdo = mpt ? after : 0; R.curOdo = R.odoReading.odometer + (mpt ? after * mpt : 0); }
+    // an odometer typed in on the truck page (Edit details) counts when it's newer than the drivers' last one
+    var readOn = s.reading_on ? String(s.reading_on).slice(0, 10) : "";
+    if (s.odometer > 0 && readOn && (!R.odoReading || tsNum(readOn + "T12:00:00") >= tsNum(R.odoReading.ts))) {
+      after = fills.filter(function (e) { return tsNum(e.ts) > dayEnd(readOn); }).length;
+      R.odoReading = { odometer: Number(s.odometer), ts: readOn + "T12:00:00", manual: true };
+      R.fillsAfterOdo = mpt ? after : 0; R.curOdo = R.odoReading.odometer + (mpt ? after * mpt : 0);
+    }
     var hrs = null; for (var j = fills.length - 1; j >= 0; j--) if (fills[j].hours > 0) { hrs = fills[j]; break; }
+    if (s.hours > 0 && readOn && (!hrs || tsNum(readOn + "T12:00:00") >= tsNum(hrs.ts))) hrs = { hours: Number(s.hours), ts: readOn + "T12:00:00", manual: true };
     R.hoursReading = hrs;
 
     if (!last) return R;
@@ -3162,6 +3225,9 @@
       }
     }
 
+    // --- vehicle details ---
+    renderDetails(info, C, D, broken);
+
     // --- documents ---
     renderOwnerPicker(info, D, broken);
     var reg = D.registration, rl = $("regLine");
@@ -3171,7 +3237,7 @@
         (exp ? ' · registration <span class="' + (days < 0 ? "exp-bad" : days <= 30 ? "exp-soon" : "") + '">' + (days < 0 ? "expired " : "expires ") + exp.toLocaleDateString("en-US") + '</span>' : "");
     } else rl.innerHTML = "";
     var grid = $("docGrid"); grid.innerHTML = "";
-    var dlist = (C && !C.error && D.docs) || [];
+    var dlist = ((C && !C.error && D.docs) || []).filter(function (d) { return d.doc_type !== "Photo"; });
     $("docEmpty").textContent = broken ? "" : !C ? "Loading…" : C.docError ? "Couldn't open the files: " + C.docError : (!dlist.length ? "No documents yet. Tap + Upload to add a registration, receipt or insurance card." : "");
     dlist.forEach(function (d) {
       var tile = document.createElement("button"); tile.className = "doc-tile";
@@ -3288,8 +3354,176 @@
   });
 
 
+  // --- vehicle details + photo ---
+  // Edited with admin_save_vehicle (PIN-checked). An uploaded photo is a vehicle_docs row with doc_type "Photo"
+  // in the private bucket; the newest one replaces photos/<barcode>.jpg everywhere in Office.
+  function uploadedPhotoPath(code) { var s = code && svc[code]; return s && s.photo ? s.photo : ""; }
+  function hasUploadedPhoto(code) { var p = uploadedPhotoPath(code); return !!(p && docUrls[p]); }
+  function photoUrl(code) {
+    if (!code) return "";
+    var p = uploadedPhotoPath(code), u = p && docUrls[p];
+    return u ? u.url : "photos/" + encodeURIComponent(code) + ".jpg";
+  }
+  async function signFleetPhotos() {
+    var need = Object.keys(svc).map(function (k) { return svc[k].photo; })
+      .filter(function (p) { var u = p && docUrls[p]; return p && (!u || Date.now() - u.at > 45 * 60000); });
+    if (!need.length) return;
+    try {
+      var r = await docsFn({ action: "sign", paths: need });
+      Object.keys(r.urls || {}).forEach(function (p) { docUrls[p] = { url: r.urls[p], at: Date.now() }; });
+    } catch (e) { /* the built-in photos still show */ }
+  }
+  var photoDelSure = false, photoDelTimer = null;
+  function renderDetails(info, C, D, broken) {
+    var g = $("detGrid"), reg = D.registration || {}, isTruck = info.kind === "Truck";
+    var up = hasUploadedPhoto(info.code);
+    $("btnDetEdit").disabled = !!broken || !C || !!(C && C.error);
+    $("btnPhoto").disabled = !!broken || !C;
+    $("btnPhoto").innerHTML = "&#128247; Change photo";
+    var reset = $("btnPhotoReset");
+    if (!reset) {
+      reset = document.createElement("button"); reset.className = "btn-gray"; reset.id = "btnPhotoReset";
+      $("btnPhoto").parentNode.insertBefore(reset, $("btnPhoto"));
+      reset.addEventListener("click", removeUploadedPhoto);
+    }
+    reset.classList.toggle("hidden", !up || !!broken);
+    reset.textContent = photoDelSure ? "Tap again to remove" : "Remove photo";
+    if (broken) { g.innerHTML = '<div class="banner warn" style="margin:0;grid-column:1/-1;">Run the latest <b>supabase/setup.sql</b> in the Supabase SQL Editor to edit details (see the README).</div>'; return; }
+    if (!C) { g.innerHTML = '<div class="svc-how">Loading…</div>'; return; }
+    if (C.error) { g.innerHTML = '<div class="banner err" style="margin:0;grid-column:1/-1;">' + esc(C.error) + '</div>'; return; }
+    function item(k, v, cls, sub) {
+      var none = v == null || v === "";
+      return '<div class="det-item"><div class="det-k">' + k + '</div><div class="det-v' + (none ? " none" : "") + (cls ? " " + cls : "") + '">' + (none ? "Not set" : v) + (sub ? "<small>" + sub + "</small>" : "") + '</div></div>';
+    }
+    var R = serviceEstimate(info), on = reg.reading_on ? fmtDay(reg.reading_on) : "";
+    var vin = reg.vin || "", vinSub = isTruck && vin && vin.length <= 6 ? "last " + vin.length + " only" : "";
+    var reading;
+    if (isTruck) {
+      if (R.curOdo != null) reading = item("Odometer", (R.fillsAfterOdo ? "~" : "") + fmtInt(R.curOdo), "", R.odoReading && R.odoReading.manual ? "entered " + fmtInt(R.odoReading.odometer) + " for " + on + (R.fillsAfterOdo ? ", + " + R.fillsAfterOdo + " fill-up" + (R.fillsAfterOdo === 1 ? "" : "s") + " since" : "") : "from the last fill-up" + (R.fillsAfterOdo ? " + " + R.fillsAfterOdo + " tank" + (R.fillsAfterOdo === 1 ? "" : "s") : ""));
+      else reading = item("Odometer", "");
+    } else reading = item("Hour meter", R.hoursReading ? fmtInt(R.hoursReading.hours) + " hr" : "", "", R.hoursReading ? (R.hoursReading.manual ? "entered for " + on : "from a fill-up " + fmtDate(R.hoursReading.ts)) : "");
+    var exp = reg.expires ? parseDay(reg.expires) : null, days = exp ? Math.round((exp - new Date()) / 864e5) : null;
+    var ymm = [reg.year || "", reg.make || "", reg.model || ""].join(" ").trim();
+    g.innerHTML =
+      item(isTruck ? "Plate" : "Unit no.", reg.plate ? esc(reg.plate) + (reg.state ? " (" + esc(reg.state) + ")" : "") : "") +
+      item(isTruck ? "VIN" : "Serial / VIN", esc(vin), "mono", vinSub) +
+      item("Year / make / model", esc(ymm)) +
+      item("Fuel tank", reg.tank_gal ? fmtGal(reg.tank_gal) + " gal" : "") +
+      reading +
+      (isTruck || exp ? item("Registration expires", exp ? '<span class="' + (days < 0 ? "exp-bad" : days <= 30 ? "exp-soon" : "") + '">' + exp.toLocaleDateString("en-US") + '</span>' : "", "", days != null && days < 0 ? "expired" : days != null && days <= 30 ? "in " + days + " days" : "") : "") +
+      item("Usual driver", esc(info.driver || "")) +
+      item("Fuel", esc(info.fuelType) + (info.usesDef ? " + DEF" : "")) +
+      item("Registered / titled to", esc(reg.owner || "")) +
+      (reg.notes ? item("Notes", esc(reg.notes)) : "");
+  }
+  function openDetForm() {
+    var info = truckInfo(detailTruck), code = vdCode(), C = vdCache[code]; if (!info || !C) return;
+    var reg = (C.data && C.data.registration) || {}, isTruck = info.kind === "Truck";
+    $("dtName").value = info.name;
+    var ds = $("dtDriver"), names = drivers.map(function (d) { return d.name; });
+    if (info.driver && names.indexOf(info.driver) < 0) names.unshift(info.driver);
+    ds.innerHTML = '<option value="">None</option>' + names.map(function (n) { return '<option>' + esc(n) + '</option>'; }).join("");
+    ds.value = info.driver || "";
+    $("dtFuel").value = info.fuelType === "Gas" ? "Gas" : "Diesel";
+    $("dtDef").checked = !!info.usesDef;
+    $("dtVinLabel").textContent = isTruck ? "VIN" : "Serial no. / VIN";
+    $("dtPlateLabel").textContent = isTruck ? "Plate" : "Unit no.";
+    $("dtVin").value = reg.vin || ""; $("dtPlate").value = reg.plate || ""; $("dtState").value = reg.state || "";
+    $("dtYear").value = reg.year || ""; $("dtMake").value = reg.make || ""; $("dtModel").value = reg.model || "";
+    $("dtTank").value = reg.tank_gal || "";
+    $("dtReadingLabel").textContent = isTruck ? "Odometer now" : "Hour meter now";
+    var rd = isTruck ? reg.odometer : reg.hours;
+    $("dtReading").value = rd > 0 ? rd : "";
+    $("dtReading").placeholder = isTruck ? (vinCurOdo(info) || "") : "";
+    $("dtReadingOn").value = reg.reading_on ? String(reg.reading_on).slice(0, 10) : "";
+    $("dtExpires").value = reg.expires ? String(reg.expires).slice(0, 10) : "";
+    $("dtNotes").value = reg.notes || "";
+    detVinHint();
+    hideErr("dtErr"); $("detForm").classList.remove("hidden");
+    $("btnDetEdit").textContent = "Close";
+  }
+  function vinCurOdo(info) { var R = serviceEstimate(info); return R.curOdo != null ? "about " + fmtInt(R.curOdo) : ""; }
+  function closeDetForm() { $("detForm").classList.add("hidden"); $("btnDetEdit").innerHTML = "&#9998; Edit details"; }
+  function detVinHint() {
+    var info = truckInfo(detailTruck), v = $("dtVin").value.trim(), h = $("dtHint");
+    if (info && info.kind === "Truck" && v && v.length !== 17) h.textContent = "VIN: " + (v.length <= 6 ? "only the last " + v.length + " are on file. Type the full 17 from the registration or the door sticker when you have it." : vinCheck(v));
+    else h.textContent = info && info.kind === "Truck" && v ? vinCheck(v) : "";
+  }
+  $("dtVin").addEventListener("input", detVinHint);
+  $("dtReading").addEventListener("input", function () { $("dtReadingOn").value = this.value.trim() ? todayYmd() : ""; });
+  $("btnDetEdit").addEventListener("click", function () {
+    if (!$("detForm").classList.contains("hidden")) { closeDetForm(); return; }
+    openDetForm();
+  });
+  $("btnDtCancel").addEventListener("click", closeDetForm);
+  $("btnDtSave").addEventListener("click", async function () {
+    var info = truckInfo(detailTruck); if (!info) return;
+    var code = info.code, C = vdCache[code], reg = (C && C.data && C.data.registration) || {}, isTruck = info.kind === "Truck";
+    var name = $("dtName").value.trim(), year = $("dtYear").value.trim();
+    if (!name) { showErr("dtErr", "The name can't be blank."); return; }
+    if (year && !/^\d{4}$/.test(year)) { showErr("dtErr", "Year should be 4 digits, like 2019."); return; }
+    for (var i = 0; i < trucks.length; i++) if (trucks[i].code !== code && trucks[i].name.toLowerCase() === name.toLowerCase()) { showErr("dtErr", name + " is already in the list. Pick another name."); return; }
+    var reading = num($("dtReading").value), readOn = $("dtReadingOn").value;
+    var b = this; b.disabled = true; b.textContent = "Saving…"; hideErr("dtErr");
+    try {
+      if (name !== info.name) {
+        var r = await adminPost({ action: "renameTruck", name: info.name, newName: name });
+        if (!(r && r.ok)) throw new Error(r && /name taken/.test(r.error || "") ? name + " is already used (maybe by one removed earlier)." : (r && r.error) || "rename failed");
+        detailTruck = name;
+      }
+      await sbRpc("admin_save_vehicle", { p_pin: sessionPin, p_code: code,
+        p_vin: $("dtVin").value, p_plate: $("dtPlate").value, p_state: $("dtState").value, p_year: year,
+        p_make: $("dtMake").value, p_model: $("dtModel").value, p_expires: $("dtExpires").value,
+        p_tank_gal: num($("dtTank").value) || null,
+        p_odometer: isTruck ? (reading > 0 ? reading : null) : (reg.odometer || null),
+        p_hours: isTruck ? (reg.hours || null) : (reading > 0 ? reading : null),
+        p_reading_on: readOn || (reading > 0 ? todayYmd() : ""), p_notes: $("dtNotes").value,
+        p_driver: $("dtDriver").value, p_fuel: $("dtFuel").value, p_def: $("dtDef").checked });
+      closeDetForm();
+      await fetchLists();
+      await refreshVehicle(code);
+      if (name !== info.name) fetchRemote(); else renderAll();
+    } catch (e) {
+      var m = String(e && e.message || e);
+      showErr("dtErr", /admin_save_vehicle/.test(m) ? "Editing isn't set up yet. Run the latest supabase/setup.sql in the Supabase SQL Editor." : "Couldn't save: " + m);
+    }
+    b.disabled = false; b.textContent = "Save details";
+  });
+  $("btnPhoto").addEventListener("click", function () { $("photoFile").click(); });
+  $("photoFile").addEventListener("change", async function () {
+    var file = this.files && this.files[0]; this.value = "";
+    var info = truckInfo(detailTruck); if (!file || !info) return;
+    var code = info.code, msg = $("photoMsg"), b = $("btnPhoto");
+    var old = (((vdCache[code] || {}).data || {}).docs || []).filter(function (d) { return d.doc_type === "Photo"; });
+    msg.className = "banner info"; msg.style.margin = "0 0 12px"; msg.textContent = "Uploading the new photo…"; b.disabled = true;
+    try {
+      await uploadDoc(code, file, "Photo", "Photo " + fmtDay(todayYmd()));
+      // only the newest photo is used, so the old uploaded ones are removed
+      for (var i = 0; i < old.length; i++) { try { await docsFn({ action: "delete", id: old[i].id }); } catch (e) {} }
+      await refreshVehicle(code);
+      msg.className = "banner ok"; msg.textContent = "✓ New photo saved for " + info.name;
+      setTimeout(function () { msg.classList.add("hidden"); }, 2500);
+      renderAll();
+    } catch (e) { msg.className = "banner err"; msg.textContent = "Couldn't upload the photo: " + (e.message || e); }
+    b.disabled = false;
+  });
+  async function removeUploadedPhoto() {
+    var info = truckInfo(detailTruck); if (!info) return;
+    if (!photoDelSure) {
+      photoDelSure = true; clearTimeout(photoDelTimer);
+      photoDelTimer = setTimeout(function () { photoDelSure = false; if (view === "truck") renderVehicleExtras(); }, 3000);
+      renderVehicleExtras(); return;
+    }
+    photoDelSure = false;
+    var code = info.code, docs = (((vdCache[code] || {}).data || {}).docs || []).filter(function (d) { return d.doc_type === "Photo"; });
+    try {
+      for (var i = 0; i < docs.length; i++) await docsFn({ action: "delete", id: docs[i].id });
+      await refreshVehicle(code); renderAll();
+    } catch (e) { var m = $("photoMsg"); m.className = "banner err"; m.style.margin = "0 0 12px"; m.textContent = "Couldn't remove it: " + (e.message || e); }
+  }
+
   // --- which company (LLC) it's registered / titled to ---
-  var OWNER_DEFAULTS = ["Maile, Inc.", "Maile Leasing LLC", "Maile Concrete"];
+  var OWNER_DEFAULTS = ["MAILE CONCRETE FLEET LLC", "Maile, Inc.", "Maile Leasing LLC", "Maile Concrete"];
   function ownerNames() {
     var seen = {}, out = [];
     function add(n) { n = String(n || "").trim(); if (n && !seen[n.toLowerCase()]) { seen[n.toLowerCase()] = 1; out.push(n); } }
