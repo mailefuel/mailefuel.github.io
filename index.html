@@ -423,15 +423,24 @@
   .fleet-card.picked { box-shadow: 0 0 0 3px #FFFFFF, 0 16px 36px rgba(25,25,60,0.26); }
   .fleet-card.picked .fleet-check { background: #FFFFFF; color: var(--navy); }
   .fleet-print { margin-top: -2px; }
-  /* 4x6 labels: one per page for the label printer */
-  .labels.four6 { grid-template-columns: repeat(auto-fill, 4in); justify-content: center; }
-  .labels.four6 .lbl { width: 4in; height: 6in; padding: 0.3in 0.2in; display: flex; flex-direction: column; justify-content: center; border-radius: 0; }
-  .labels.four6 .lbl-name { font-size: 40px; line-height: 1.05; }
-  .labels.four6 .lbl-bar svg { width: 100%; height: 1.4in; }
-  .labels.four6 .lbl-row { flex-direction: column; gap: 10px; margin-top: 14px; }
-  .labels.four6 .lbl-qr img, .labels.four6 .lbl-qr canvas { width: 1.3in !important; height: 1.3in !important; }
-  .labels.four6 .lbl-code { font-size: 18px; }
-  .labels.four6 .lbl-brand { font-size: 13px; }
+  /* 4x6 labels, landscape (6in wide x 4in tall), one per page for the label printer:
+     vehicle info as bullets on the left, QR in the center, barcode running down the right edge */
+  .labels.four6 { grid-template-columns: repeat(auto-fill, 6in); justify-content: center; overflow-x: auto; }
+  .labels.four6 .lbl.land { width: 6in; height: 4in; padding: 0.18in; border-radius: 0; text-align: left; display: grid; grid-template-columns: minmax(0, 1fr) 1.85in 0.12in 1.05in; grid-template-rows: auto minmax(0, 1fr); column-gap: 0; overflow: hidden; font-family: Helvetica, Arial, sans-serif; }
+  .ll-head { grid-column: 1 / 3; grid-row: 1; border-bottom: 1.5pt solid #000; padding-bottom: 4pt; min-width: 0; }
+  .ll-brand { font-size: 9pt; font-weight: 700; letter-spacing: 0.02em; }
+  .ll-name { font-size: 30pt; font-weight: 800; line-height: 1.05; white-space: nowrap; text-transform: uppercase; letter-spacing: -0.01em; }
+  .ll-info { grid-column: 1; grid-row: 2; list-style: none; margin: 0; padding: 0.14in 0.08in 0 0; display: flex; flex-direction: column; gap: 7pt; min-width: 0; }
+  .ll-info li { position: relative; padding-left: 11pt; min-width: 0; }
+  .ll-info li::before { content: ""; position: absolute; left: 1pt; top: 9pt; width: 4.5pt; height: 4.5pt; border-radius: 50%; background: #000; }
+  .ll-info span { display: block; font-size: 7.5pt; font-weight: 700; text-transform: uppercase; line-height: 1.1; }
+  .ll-info b { display: block; font-size: 12pt; font-weight: 700; line-height: 1.15; white-space: nowrap; }
+  .ll-qr { grid-column: 2; grid-row: 2; align-self: center; text-align: center; }
+  .ll-qr .qr img, .ll-qr .qr canvas { width: 1.75in !important; height: 1.75in !important; margin: 0 auto; display: block; image-rendering: pixelated; }
+  .ll-qr .cap { font-size: 7pt; margin-top: 3pt; }
+  .ll-bar { grid-column: 4; grid-row: 1 / 3; border-left: 0.8pt solid #000; margin-left: -0.06in; padding-left: 0.08in; display: flex; align-items: center; gap: 2pt; min-height: 0; }
+  .ll-bar svg { width: 0.74in; height: 3.5in; display: block; flex: none; }
+  .ll-code { writing-mode: vertical-rl; transform: rotate(180deg); font-family: "Courier New", Courier, monospace; font-weight: 700; font-size: 13pt; white-space: nowrap; letter-spacing: 0.5pt; }
   /* Graphs: the vehicle using the most fuel, and a tapped day's fill-ups */
   .top-card { display: grid; grid-template-columns: auto 1fr auto; gap: 18px; align-items: center; text-align: left; color: var(--ink); cursor: pointer; padding: 16px 20px; }
   .top-card:hover { transform: translateY(-3px); }
@@ -647,7 +656,7 @@
     main { max-width: none; padding: 0; margin: 0; width: auto; background: none; border: 0; box-shadow: none; }
     .labels { gap: 8px; }
     .lbl { border: 1px dashed #999; border-radius: 0; }
-    .labels.four6 { display: block; }
+    .labels.four6 { display: block; overflow: visible; }
     .labels.four6 .lbl { border: 0; margin: 0; page-break-after: always; break-after: page; }
     .labels.four6 .lbl:last-child { page-break-after: auto; break-after: auto; }
   }
@@ -1284,7 +1293,7 @@
         <button class="filter-btn lblsize" data-size="4x6">4&times;6 label printer</button>
         <button class="filter-btn lblsize" data-size="sheet">Letter sheet</button>
       </span>
-      <div class="hint left">Print on weatherproof label stock and stick one by each fuel cap. The barcode is for the tablet's scanner; the QR code opens the app on a phone with the truck already selected.</div>
+      <div class="hint left">Print on weatherproof label stock and stick one by each fuel cap. 4&times;6 labels print landscape (6&times;4 in): set the printer to landscape, actual size. The barcode is for the tablet's scanner; the QR code opens the app on a phone with the truck already selected.</div>
     </div>
     <div class="labels" id="labelsGrid"></div>
   </section>
@@ -2340,9 +2349,9 @@
   $("btnFleetSelAll").addEventListener("click", function () { fleetShown.forEach(function (t) { if (t.code) fleetPicked[t.code] = 1; }); renderFleet(); updateFleetPrint(); });
   $("btnFleetPrintSel").addEventListener("click", function () {
     var codes = Object.keys(fleetPicked); if (!codes.length) return;
-    labelsOnly = codes; labelsBack = "reports"; setView("labels");
+    openLabels(codes, "reports");
   });
-  $("btnFleetPrintAll").addEventListener("click", function () { labelsOnly = null; labelsBack = "reports"; setView("labels"); });
+  $("btnFleetPrintAll").addEventListener("click", function () { openLabels(null, "reports"); });
   var fleetShown = [];
   // Every active truck and piece of equipment as a card. There are no truck photos yet, so each card shows the
   // truck or equipment picture used across the app.
@@ -3810,10 +3819,7 @@
       st.textContent = "\u2713 Imported " + (c.fillups || 0) + " fill-ups, " + (c.loads || 0) + " tank loads, " + (c.assets || 0) + " trucks, " + (c.drivers || 0) + " drivers. Tap \u21BB to refresh.";
     } catch (e) { st.textContent = "Couldn't import: " + String(e.message || e); }
   });
-  $("btnLabels").addEventListener("click", function () {
-    labelsOnly = null; labelsBack = "reports"; setView("labels");
-    fetchRegs().then(function () { if (view === "labels") renderLabels(); });   // adds plates to the labels
-  });
+  $("btnLabels").addEventListener("click", function () { openLabels(null, "reports"); });
 
   // ---------- printable labels (barcode for the scanner + QR for phones) ----------
   function regFor(name) {
@@ -3830,6 +3836,52 @@
     try { if (typeof QRCode !== "undefined") new QRCode(d.querySelector(".lbl-qr"), { text: base + "?code=" + encodeURIComponent(t.code), width: 84, height: 84, correctLevel: QRCode.CorrectLevel.M }); } catch (e) {}
     return d;
   }
+  // 4x6 landscape label: name + info bullets left, QR center, vertical Code 128 right
+  function buildLabelLand(t) {
+    var base = location.origin + location.pathname, r = regFor(t.name) || {};
+    var equip = t.kind === "Equipment", info = [];
+    var desc = [r.year, r.make, r.model].filter(function (x) { return x; }).join(" ");
+    function add(k, v) { if (v) info.push('<li><span>' + esc(k) + '</span><b>' + esc(v) + '</b></li>'); }
+    var vin = String(r.vin || ""); if (vin && vin.length < 17 && !equip) vin = "\u2026" + vin;   // only the last 4 on file
+    if (equip) { add("Machine", desc); add("Unit", r.plate); add("S/N", r.vin); }
+    else { add("Vehicle", desc); add("Driver", t.driver); add("Plate", r.plate ? r.plate + (r.state ? " (" + r.state + ")" : "") : ""); add("VIN", vin); }
+    add("Owner", r.owner);
+    add("Fuel", (t.fuelType === "Gas" ? "GAS" : "DIESEL") + (t.usesDef ? " + DEF" : ""));
+    var d = document.createElement("div"); d.className = "lbl land";
+    d.innerHTML = '<div class="ll-head"><div class="ll-brand">MAILE CONCRETE \u00b7 ' + (equip ? "EQUIPMENT" : "TRUCK") + '</div><div class="ll-name">' + esc(t.name) + '</div></div>' +
+      '<ul class="ll-info">' + info.join("") + '</ul>' +
+      '<div class="ll-qr"><div class="qr"></div><div class="cap">SCAN AT THE FUEL TABLET</div></div>' +
+      '<div class="ll-bar"><svg></svg><div class="ll-code">' + esc(t.code) + '</div></div>';
+    try {
+      if (typeof JsBarcode !== "undefined") {
+        var svg = d.querySelector("svg");
+        JsBarcode(svg, t.code, { format: "CODE128", displayValue: false, height: 60, width: 2, margin: 0 });
+        // turn it on its side so it reads bottom-to-top down the right edge
+        var w = parseFloat(svg.getAttribute("width")), h = parseFloat(svg.getAttribute("height"));
+        var g = document.createElementNS("http://www.w3.org/2000/svg", "g");
+        while (svg.firstChild) g.appendChild(svg.firstChild);
+        g.setAttribute("transform", "translate(0," + w + ") rotate(-90)");
+        svg.appendChild(g);
+        svg.removeAttribute("width"); svg.removeAttribute("height"); svg.removeAttribute("style");
+        svg.setAttribute("viewBox", "0 0 " + h + " " + w);
+        svg.setAttribute("preserveAspectRatio", "none");
+        svg.setAttribute("shape-rendering", "crispEdges");
+      }
+    } catch (e) {}
+    try { if (typeof QRCode !== "undefined") new QRCode(d.querySelector(".ll-qr .qr"), { text: base + "?code=" + encodeURIComponent(t.code), width: 360, height: 360, correctLevel: QRCode.CorrectLevel.M }); } catch (e) {}
+    return d;
+  }
+  // shrink the name and long info lines until they fit their column
+  function fitLabelText(root) {
+    root.querySelectorAll(".lbl.land .ll-name, .lbl.land .ll-info b").forEach(function (el) {
+      var size = parseFloat(getComputedStyle(el).fontSize), min = el.classList.contains("ll-name") ? 16 : 8;
+      while (el.scrollWidth > el.clientWidth + 0.5 && size > min) { size -= 0.5; el.style.fontSize = size + "px"; }
+    });
+  }
+  function openLabels(codes, back) {
+    labelsOnly = codes; labelsBack = back || "reports"; setView("labels");
+    return fetchRegs().then(function () { if (view === "labels") renderLabels(); });   // plate, VIN, owner on the labels
+  }
   var LABEL_SIZE_KEY = "fl3-label-size", labelSize = localGet(LABEL_SIZE_KEY) || "4x6";
   document.querySelectorAll(".lblsize").forEach(function (b) {
     b.addEventListener("click", function () { labelSize = b.getAttribute("data-size"); localSet(LABEL_SIZE_KEY, labelSize); renderLabels(); });
@@ -3839,15 +3891,14 @@
     grid.classList.toggle("four6", labelSize === "4x6");
     document.querySelectorAll(".lblsize").forEach(function (b) { b.classList.toggle("active", b.getAttribute("data-size") === labelSize); });
     var ps = $("labelPageSize"); if (!ps) { ps = document.createElement("style"); ps.id = "labelPageSize"; document.head.appendChild(ps); }
-    ps.textContent = labelSize === "4x6" ? "@media print { @page { size: 4in 6in; margin: 0; } }" : "";
+    ps.textContent = labelSize === "4x6" ? "@media print { @page { size: 6in 4in; margin: 0; } }" : "";
     var list = labelsOnly ? trucks.filter(function (t) { return labelsOnly.indexOf(t.code) >= 0; }) : trucks;
-    list.forEach(function (t) { grid.appendChild(buildLabel(t)); });
+    list.forEach(function (t) { grid.appendChild(labelSize === "4x6" ? buildLabelLand(t) : buildLabel(t)); });
+    if (labelSize === "4x6") fitLabelText(grid);
     if (!list.length) grid.innerHTML = '<div class="hint">No trucks or equipment in the list yet.</div>';
   }
   function printOneLabel(code) {
-    labelsOnly = [code]; labelsBack = "register";
-    setView("labels");
-    setTimeout(function () { window.print(); }, 400);
+    openLabels([code], "register").then(function () { setTimeout(function () { window.print(); }, 400); });
   }
 
   // ---------- registrations: photo -> details -> truck + QR label ----------
