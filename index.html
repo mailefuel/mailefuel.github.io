@@ -754,10 +754,10 @@
   html.intro-on:not(.intro-bar) header { background: transparent; border-color: transparent; box-shadow: none; transition: background .6s ease, border-color .6s ease, box-shadow .6s ease; }
   /* during the intro the logo sits in a round dark bubble with a white ring so it's easy to read */
   html.intro-on .logo-plate { z-index: 60; }
-  html.intro-on:not(.intro-bar) .logo-plate { border-radius: 34px; border: 2px solid rgba(255,255,255,0.85);
+  html.intro-on .logo-plate { border-radius: 34px; border: 2px solid rgba(255,255,255,0.85);
     background: radial-gradient(120% 140% at 50% 0%, #2F4A7E 0%, #1C2C52 55%, #141F3D 100%);
     box-shadow: 0 0 0 6px rgba(255,255,255,0.18), 0 18px 50px rgba(5,10,30,0.55), inset 0 1px 0 rgba(255,255,255,0.25); }
-  .logo-plate { transition: background .6s ease, border-color .6s ease, box-shadow .6s ease, border-radius .6s ease; }
+  .logo-plate { transition: background .35s ease, border-color .35s ease, box-shadow .35s ease, border-radius .35s ease; }
   html.intro-on .logo { filter: drop-shadow(0 10px 40px rgba(10,20,60,0.55)) drop-shadow(0 0 22px rgba(255,255,255,0.35)); }
   .intro-veil { position: fixed; inset: 0; z-index: 0; pointer-events: none; background: radial-gradient(60% 50% at 50% 50%, rgba(28,44,82,0.55), rgba(20,30,60,0.80)); }
   html.intro-done header, html.intro-done .logo, html.intro-done main { animation: none !important; }
@@ -4409,7 +4409,7 @@
 
     // where the logo really sits, and how far / how much bigger it has to be to fill the middle of the screen
     var R = plate.getBoundingClientRect(), vw = window.innerWidth, vh = window.innerHeight;
-    var S = Math.max(1.6, Math.min(vw * 0.72 / R.width, vh * 0.38 / R.height, 5));
+    var S = Math.max(1.3, Math.min(vw * 0.42 / R.width, vh * 0.22 / R.height, 2.8));
     var dx = vw / 2 - (R.left + R.width / 2), dy = vh / 2 - (R.top + R.height / 2);
     var big = "translate(" + dx + "px," + dy + "px) scale(" + S + ")";
     var cx = vw / 2, cy = vh / 2;
@@ -4430,7 +4430,7 @@
 
     // timeline: pop up (0.5s), sit in its bubble while a glare sweeps across (1s), panels blow into place,
     // then the logo waves and zooms up into its spot
-    var anims = [], T_POP = 520, T_HOLD = 1050, T_OUT = T_POP + T_HOLD, STAG = 100, DUR = 900;
+    var anims = [], T_POP = 480, T_HOLD = 950, T_OUT = T_POP + T_HOLD, STAG = 80, DUR = 760;
     root.classList.remove("intro-pre");
     // 1) the logo pops up, huge, in the middle, inside its bubble
     anims.push(plate.animate([
@@ -4459,8 +4459,9 @@
     if (main) {
       var M = main.getBoundingClientRect(), ox = cx - M.left, oy = cy - M.top;
       anims.push(main.animate([
-        { clipPath: "circle(0px at " + ox + "px " + oy + "px)", opacity: 0.3 },
-        { clipPath: "circle(" + Math.hypot(Math.max(ox, M.width - ox), Math.max(oy, vh)) * 1.1 + "px at " + ox + "px " + oy + "px)", opacity: 1 }
+        // grows out from the logo as a rounded box, so the window keeps its round corners the whole way
+        { clipPath: "inset(" + Math.max(0, oy - 40) + "px " + Math.max(0, M.width - ox - 60) + "px " + Math.max(0, M.height - oy - 40) + "px " + Math.max(0, ox - 60) + "px round 40px)", opacity: 0.3 },
+        { clipPath: "inset(-12px -12px -12px -12px round 38px)", opacity: 1 }
       ], { duration: 700, delay: T_OUT - 120, easing: "cubic-bezier(.3,.8,.3,1)", fill: "backwards" }));
     }
     var order = parts.filter(Boolean).concat(pieces), last = T_OUT;
@@ -4468,7 +4469,8 @@
       var d = T_OUT + Math.min(i, 10) * STAG;
       anims.push(genie(el, d, DUR)); last = Math.max(last, d + DUR);
     });
-    var T_WAVE = 650, T_HOME = 750;
+    var T_WAVE = 420, T_HOME = 520;
+    last = last - Math.round(DUR * 0.35);   // wave as the last panel is settling, not after it
     anims.push(veil.animate([{ opacity: 0 }, { opacity: 1, offset: 0.2 }, { opacity: 1, offset: 0.55 }, { opacity: 0 }],
       { duration: last + T_WAVE + 200, easing: "ease-out", fill: "forwards" }));
     // the logo holds its big spot while the panels arrive
@@ -4480,15 +4482,15 @@
       { transform: big + " rotate(9deg)", offset: 0.5 },
       { transform: big + " rotate(-4deg)", offset: 0.75 },
       { transform: big }
-    ], { duration: T_WAVE, delay: last + 40, easing: "ease-in-out", fill: "both" }));
+    ], { duration: T_WAVE, delay: last, easing: "ease-in-out", fill: "both" }));
     // 5) ...then zooms up into its normal spot on the top bar
     var home = plate.animate([
       { transform: big },
       { transform: "translate(0,-10px) scale(1.08)", offset: 0.8 },
       { transform: "none" }
-    ], { duration: T_HOME, delay: last + 40 + T_WAVE, easing: "cubic-bezier(.6,0,.2,1)" });
+    ], { duration: T_HOME, delay: last + T_WAVE, easing: "cubic-bezier(.6,0,.2,1)" });
     anims.push(home);
-    last = last + 40 + T_WAVE;   // the top bar gets its colour back as the logo starts zooming home
+    last = last + T_WAVE;   // the top bar gets its colour back as the logo starts zooming home
     var done = false;
     function finish() {
       if (done) return; done = true;
