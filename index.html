@@ -4458,11 +4458,14 @@
     // 3) the big window bursts open out of the logo, and everything on it blows into place one after another
     if (main) {
       var M = main.getBoundingClientRect(), ox = cx - M.left, oy = cy - M.top;
+      // grows out of the logo as one whole window (scaled, never clipped), so its round corners and white ring
+      // stay in shape the whole way
+      main.style.transformOrigin = ox + "px " + oy + "px";
       anims.push(main.animate([
-        // grows out from the logo as a rounded box, so the window keeps its round corners the whole way
-        { clipPath: "inset(" + Math.max(0, oy - 40) + "px " + Math.max(0, M.width - ox - 60) + "px " + Math.max(0, M.height - oy - 40) + "px " + Math.max(0, ox - 60) + "px round 40px)", opacity: 0.3 },
-        { clipPath: "inset(-12px -12px -12px -12px round 38px)", opacity: 1 }
-      ], { duration: 700, delay: T_OUT - 120, easing: "cubic-bezier(.3,.8,.3,1)", fill: "backwards" }));
+        { transform: "scale(.08)", opacity: 0 },
+        { transform: "scale(1.025)", opacity: 1, offset: 0.7 },
+        { transform: "none", opacity: 1 }
+      ], { duration: 640, delay: T_OUT - 120, easing: "cubic-bezier(.3,.8,.3,1)", fill: "backwards" }));
     }
     var order = parts.filter(Boolean).concat(pieces), last = T_OUT;
     order.forEach(function (el, i) {
@@ -4496,6 +4499,7 @@
       if (done) return; done = true;
       anims.forEach(function (a) { try { a.cancel(); } catch (e) {} });
       if (veil.parentNode) veil.parentNode.removeChild(veil);
+      if (main) main.style.transformOrigin = "";
       root.classList.add("intro-done"); root.classList.remove("intro-on");
       document.removeEventListener("pointerdown", finish, true);
       if (view === "scan") setTimeout(scanFocus, 30);
