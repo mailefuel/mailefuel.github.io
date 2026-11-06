@@ -4411,7 +4411,6 @@
     var R = plate.getBoundingClientRect(), vw = window.innerWidth, vh = window.innerHeight;
     var S = Math.max(1.3, Math.min(vw * 0.42 / R.width, vh * 0.22 / R.height, 2.8));
     var dx = vw / 2 - (R.left + R.width / 2), dy = vh / 2 - (R.top + R.height / 2);
-    var big = "translate(" + dx + "px," + dy + "px) scale(" + S + ")";
     var cx = vw / 2, cy = vh / 2;
 
     // the pieces that pour out: the top bar's name and tabs, the big window, then the panels inside the open screen
@@ -4432,12 +4431,6 @@
     // then the logo waves and zooms up into its spot
     var anims = [], T_POP = 480, T_HOLD = 950, T_OUT = T_POP + T_HOLD, STAG = 80, DUR = 760;
     root.classList.remove("intro-pre");
-    // 1) the logo pops up, huge, in the middle, inside its bubble
-    anims.push(plate.animate([
-      { transform: big + " scale(.25) rotate(-12deg)", opacity: 0 },
-      { transform: big + " scale(1.06) rotate(2deg)", opacity: 1, offset: 0.7 },
-      { transform: big, opacity: 1 }
-    ], { duration: T_POP, easing: "cubic-bezier(.3,1.3,.5,1)", fill: "both" }));
     // 2) a shiny glare sweeps across it while it sits there
     var gloss = document.querySelector(".logo-gloss");
     if (gloss) anims.push(gloss.animate([
@@ -4451,8 +4444,8 @@
         { transform: "translate(" + ex + "px," + ey + "px) scale(" + sx + ",0.03)", opacity: 0, offset: 0 },
         { transform: "translate(" + ex * 0.55 + "px," + ey * 0.65 + "px) scale(" + Math.min(1, sx * 1.4) + ",0.8)", opacity: 1, offset: 0.38 },
         { transform: "translate(" + ex * 0.06 + "px," + ey * 0.05 + "px) scale(0.94,1.05)", offset: 0.74 },
-        { transform: "scale(1.02,0.98)", offset: 0.88 },
-        { transform: "none", opacity: 1, offset: 1 }
+        { transform: "translate(0px,0px) scale(1.02,0.98)", offset: 0.88 },
+        { transform: "translate(0px,0px) scale(1,1)", opacity: 1, offset: 1 }
       ], { duration: dur, delay: delay, easing: "cubic-bezier(.22,.9,.3,1)", fill: "backwards" });
     }
     // 3) the big window bursts open out of the logo, and everything on it blows into place one after another
@@ -4476,22 +4469,24 @@
     last = last - Math.round(DUR * 0.35);   // wave as the last panel is settling, not after it
     anims.push(veil.animate([{ opacity: 0 }, { opacity: 1, offset: 0.2 }, { opacity: 1, offset: 0.55 }, { opacity: 0 }],
       { duration: last + T_WAVE + 200, easing: "ease-out", fill: "forwards" }));
-    // the logo holds its big spot while the panels arrive
-    anims.push(plate.animate([{ transform: big }, { transform: big }], { duration: last - T_POP + 60, delay: T_POP, fill: "both" }));
-    // 4) it tilts side to side like a wave hello...
-    anims.push(plate.animate([
-      { transform: big },
-      { transform: big + " rotate(-11deg)", offset: 0.22 },
-      { transform: big + " rotate(9deg)", offset: 0.5 },
-      { transform: big + " rotate(-4deg)", offset: 0.75 },
-      { transform: big }
-    ], { duration: T_WAVE, delay: last, easing: "ease-in-out", fill: "both" }));
-    // 5) ...then zooms up into its normal spot on the top bar
+    // the logo's whole trip is ONE animation (pop up, sit, wave, zoom home). Stacking several animations on the
+    // same element is where iPhone Safari goes wrong, and every step uses the same transform list so it never
+    // has to guess how to blend them.
+    function tf(x, y, s, r) { return "translate(" + x + "px," + y + "px) scale(" + s + ") rotate(" + r + "deg)"; }
+    var T_END = last + T_WAVE + T_HOME;
+    function at(ms) { return Math.min(1, Math.max(0, ms / T_END)); }
     var home = plate.animate([
-      { transform: big },
-      { transform: "translate(0,-10px) scale(1.08)", offset: 0.8 },
-      { transform: "none" }
-    ], { duration: T_HOME, delay: last + T_WAVE, easing: "cubic-bezier(.6,0,.2,1)" });
+      { transform: tf(dx, dy, S * 0.25, -12), opacity: 0, offset: 0, easing: "cubic-bezier(.3,1.3,.5,1)" },
+      { transform: tf(dx, dy, S * 1.06, 2), opacity: 1, offset: at(T_POP * 0.7), easing: "ease-out" },
+      { transform: tf(dx, dy, S, 0), opacity: 1, offset: at(T_POP) },
+      { transform: tf(dx, dy, S, 0), opacity: 1, offset: at(last), easing: "ease-in-out" },
+      { transform: tf(dx, dy, S, -11), opacity: 1, offset: at(last + T_WAVE * 0.22), easing: "ease-in-out" },
+      { transform: tf(dx, dy, S, 9), opacity: 1, offset: at(last + T_WAVE * 0.5), easing: "ease-in-out" },
+      { transform: tf(dx, dy, S, -4), opacity: 1, offset: at(last + T_WAVE * 0.75), easing: "ease-in-out" },
+      { transform: tf(dx, dy, S, 0), opacity: 1, offset: at(last + T_WAVE), easing: "cubic-bezier(.6,0,.2,1)" },
+      { transform: tf(0, -10, 1.08, 0), opacity: 1, offset: at(last + T_WAVE + T_HOME * 0.8), easing: "ease-out" },
+      { transform: tf(0, 0, 1, 0), opacity: 1, offset: 1 }
+    ], { duration: T_END, fill: "both" });
     anims.push(home);
     last = last + T_WAVE;   // the top bar gets its colour back as the logo starts zooming home
     var done = false;
@@ -4530,7 +4525,22 @@
     fetchRemote().then(function () {
       if (launchCode && !launched && view === "scan" && trucks.length) handleScan(launchCode, null);
     });
-    try { playIntro(); } catch (e) { document.documentElement.classList.remove("intro-pre", "intro-on"); }
+    // wait for the logo picture and the fonts before measuring, so on a phone on cell data the panels and logo
+    // aren't measured half-loaded (never more than about a second)
+    (function startIntro() {
+      var started = false, waits = [];
+      function go() {
+        if (started) return; started = true;
+        requestAnimationFrame(function () {
+          try { playIntro(); } catch (e) { document.documentElement.classList.remove("intro-pre", "intro-on"); }
+        });
+      }
+      var img = document.querySelector(".logo");
+      if (img && img.tagName === "IMG" && !img.complete) waits.push(new Promise(function (r) { img.addEventListener("load", r); img.addEventListener("error", r); }));
+      if (document.fonts && document.fonts.ready) waits.push(document.fonts.ready);
+      if (window.Promise && waits.length) Promise.all(waits).then(go, go); else go();
+      setTimeout(go, 1100);
+    })();
   })();
 })();
 </script>
