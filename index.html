@@ -4447,7 +4447,7 @@
     ov.addEventListener("click", finish);           // a tap skips it
 
     function visible(r) { return r.width > 1 && r.height > 1 && r.bottom > 0 && r.top < innerHeight && r.right > 0 && r.left < innerWidth; }
-    // the pieces that fly out: the top bar's parts, then the open screen's blocks (big blocks split into their cards)
+    // the pieces that fly out: the top bar, then the open screen's blocks (big blocks split into their cards)
     function pieces() {
       var out = [];
       function add(el, depth) {
@@ -4456,7 +4456,8 @@
         if (depth < 2 && kids.length >= 2 && r.height > innerHeight * .3) { kids.forEach(function (k) { add(k, depth + 1); }); return; }
         out.push(el);
       }
-      document.querySelectorAll("header .app-name, header .tabs, header .logo-plate").forEach(function (el) { add(el, 9); });
+      // the whole top bar comes out of the logo as one piece, so it never sits there empty waiting for its buttons
+      var hd = document.querySelector("header"); if (hd) add(hd, 9);
       Array.prototype.forEach.call(main.children, function (el) { add(el, 0); });
       return out;
     }
