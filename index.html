@@ -12,7 +12,7 @@
 <link rel="icon" type="image/png" sizes="192x192" href="icon-192.png" />
 <link rel="apple-touch-icon" href="icon-192.png" />
 <title>Fuel Truck Log — Maile Concrete</title>
-<script>try { if (localStorage.getItem("fl3-calm") !== "1") document.documentElement.classList.add("intro-pre"); } catch (e) { document.documentElement.classList.add("intro-pre"); }</script>
+<script>(function () { var calm = false; try { calm = localStorage.getItem("fl3-calm") === "1"; } catch (e) {} if (!calm && document.documentElement.animate) document.documentElement.classList.add("intro", "intro-wait"); })();</script>
 <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.0/chart.umd.min.js"></script>
@@ -745,22 +745,49 @@
   .logo-plate.burst .logo { animation: logoBurst .7s var(--spring) both; }
   @keyframes logoBurst { 0% { transform: none; filter: drop-shadow(0 2px 4px rgba(0,0,0,0.40)); } 30% { transform: scale(1.14, .9); filter: drop-shadow(0 0 18px rgba(255,255,255,0.75)); } 60% { transform: scale(.96, 1.05); } 100% { transform: none; filter: drop-shadow(0 2px 4px rgba(0,0,0,0.40)); } }
 
-  /* ---------- opening intro: the Maile logo starts huge in the middle, the page pours out of it, then the
-     logo slides up into its place on the top bar (playIntro() in the script) ---------- */
-  .intro-pre main, .intro-pre .app-name, .intro-pre .tabs, .intro-pre .logo-plate { opacity: 0; }
-  .intro-pre header { background: transparent; border-color: transparent; box-shadow: none; }
-  html.intro-on main, html.intro-on main *, html.intro-on header, html.intro-on header * { animation: none !important; }
-  html.intro-on, html.intro-on body { overflow: hidden; }
-  html.intro-on:not(.intro-bar) header { background: transparent; border-color: transparent; box-shadow: none; transition: background .6s ease, border-color .6s ease, box-shadow .6s ease; }
-  /* during the intro the logo sits in a round dark bubble with a white ring so it's easy to read */
-  html.intro-on .logo-plate { z-index: 60; }
-  html.intro-on .logo-plate { border-radius: 34px; border: 2px solid rgba(255,255,255,0.85);
-    background: radial-gradient(120% 140% at 50% 0%, #2F4A7E 0%, #1C2C52 55%, #141F3D 100%);
-    box-shadow: 0 0 0 6px rgba(255,255,255,0.18), 0 18px 50px rgba(5,10,30,0.55), inset 0 1px 0 rgba(255,255,255,0.25); }
-  .logo-plate { transition: background .35s ease, border-color .35s ease, box-shadow .35s ease, border-radius .35s ease; }
-  html.intro-on .logo { filter: drop-shadow(0 10px 40px rgba(10,20,60,0.55)) drop-shadow(0 0 22px rgba(255,255,255,0.35)); }
-  .intro-veil { position: fixed; inset: 0; z-index: 0; pointer-events: none; background: radial-gradient(60% 50% at 50% 50%, rgba(28,44,82,0.55), rgba(20,30,60,0.80)); }
+  /* ---------- colours copied from the Maile bid tracker: navy top bar, dark see-through window, solid glossy panels ---------- */
+  header { background: linear-gradient(180deg, rgba(12,20,42,0.93), rgba(22,34,68,0.90)); }
+  main { background: linear-gradient(158deg, rgba(20,30,60,0.62) 0%, rgba(30,44,88,0.52) 40%, rgba(64,58,128,0.55) 100%);
+    border-color: rgba(255,255,255,0.28); box-shadow: 0 0 0 6px rgba(255,255,255,0.16), 0 30px 70px rgba(0,0,0,0.5); }
+  @media (max-width: 700px) { main { box-shadow: 0 0 0 4px rgba(255,255,255,0.16), 0 20px 40px rgba(0,0,0,0.45); } }
+  .card, .hero-card, .tot-card, .fleet-card {
+    background: linear-gradient(180deg, rgba(255,255,255,0.075), rgba(255,255,255,0) 110px), #111A33;
+    border-color: rgba(160,180,235,0.24);
+    box-shadow: inset 0 1px 0 rgba(255,255,255,0.12), 0 16px 34px -14px rgba(0,0,0,0.7);
+  }
+
+  /* ---------- opening intro, same as the Maile bid tracker: the logo sits huge in the middle in a glossy white
+     bubble while a glare crosses it, it waves, then the page bursts out of it genie style while the logo flies
+     into its spot on the top bar (script near "opening intro"). A tap skips it; fl3-calm=1 turns it off. ---------- */
+  #intro { display: none; }
+  html.intro #intro { display: flex; position: fixed; inset: 0; z-index: 200; align-items: center; justify-content: center; padding-bottom: 6vh; cursor: pointer; -webkit-tap-highlight-color: transparent; }
+  #intro::before { content: ""; position: absolute; left: 50%; top: 47%; width: min(140vw, 1100px); aspect-ratio: 1; transform: translate(-50%,-50%); border-radius: 50%; pointer-events: none;
+    background: radial-gradient(closest-side, rgba(120,160,255,0.35), rgba(60,90,200,0.14) 45%, transparent 70%); animation: introGlow .9s ease-out both; }
+  #intro .intro-bubble { position: relative; padding: clamp(16px,4.5vw,30px) clamp(22px,6vw,44px); will-change: transform; animation: introPop .7s cubic-bezier(.2,.9,.25,1.15) both; }
+  #intro .intro-bg { position: absolute; inset: 0; border-radius: clamp(26px,7vw,48px); overflow: hidden;
+    background: linear-gradient(180deg, #FFFFFF 0%, #F1F5FD 55%, #DCE5F6 100%); border: 1px solid rgba(255,255,255,0.95);
+    box-shadow: 0 18px 50px rgba(0,0,0,0.55), 0 0 0 6px rgba(255,255,255,0.14), inset 0 2px 0 #FFFFFF, inset 0 -6px 14px rgba(40,70,140,0.14); }
+  #intro .intro-bg::before { content: ""; position: absolute; left: 4%; right: 4%; top: 3%; height: 44%; border-radius: 999px;
+    background: linear-gradient(180deg, rgba(255,255,255,0.95), rgba(255,255,255,0)); pointer-events: none; }
+  #intro .intro-glare { position: absolute; top: -30%; bottom: -30%; left: 0; width: 38%; pointer-events: none; transform: translateX(-160%) skewX(-20deg);
+    background: linear-gradient(90deg, transparent, rgba(255,255,255,0.35) 35%, rgba(255,255,255,0.95) 50%, rgba(255,255,255,0.35) 65%, transparent);
+    mix-blend-mode: screen; animation: introGlare 1s cubic-bezier(.45,0,.3,1) .55s both; }
+  #intro .intro-glare.on-logo { -webkit-mask-size: 100% 100%; mask-size: 100% 100%; -webkit-mask-repeat: no-repeat; mask-repeat: no-repeat; -webkit-mask-position: center; mask-position: center;
+    inset: 0; width: auto; transform: none;
+    background: linear-gradient(110deg, transparent 30%, rgba(255,255,255,0.3) 42%, rgba(255,255,255,1) 50%, rgba(255,255,255,0.3) 58%, transparent 70%) no-repeat; background-size: 250% 100%;
+    animation: introGlareLogo 1s cubic-bezier(.45,0,.3,1) .55s both; }
+  #intro .intro-mark { position: relative; display: block; }
+  #intro .intro-logo { position: relative; width: min(80vw, 580px); height: auto; display: block; }
+  @keyframes introGlare { 0% { transform: translateX(-160%) skewX(-20deg); } 100% { transform: translateX(330%) skewX(-20deg); } }
+  @keyframes introGlareLogo { 0% { background-position: 160% 0; } 100% { background-position: -60% 0; } }
+  @keyframes introPop { 0% { opacity: 0; transform: scale(.55); } 100% { opacity: 1; transform: none; } }
+  @keyframes introGlow { 0% { opacity: 0; transform: translate(-50%,-50%) scale(.4); } 100% { opacity: 1; transform: translate(-50%,-50%) scale(1); } }
+  html.intro-wait header, html.intro-wait main { visibility: hidden; }
+  html.intro .logo-plate .logo, html.intro .logo-gloss { opacity: 0; }
+  html.intro main, html.intro main *, html.intro header, html.intro header * { animation: none !important; }
+  html.intro, html.intro body { overflow: hidden; }
   html.intro-done header, html.intro-done .logo, html.intro-done main { animation: none !important; }
+  @media print { #intro { display: none !important; } html.intro-wait header, html.intro-wait main { visibility: visible; } }
 </style>
 </head>
 <body>
@@ -778,6 +805,10 @@
   </div>
 </header>
 
+<div id="intro" aria-hidden="true"><div class="intro-bubble"><div class="intro-bg"><i class="intro-glare"></i></div><span class="intro-mark"><img class="intro-logo" alt=""><i class="intro-glare on-logo"></i></span></div></div>
+<script>(function () { var o = document.getElementById("intro"), src = document.querySelector(".logo-plate .logo");
+  if (!o || !src) return; o.querySelector(".intro-logo").src = src.src;
+  var g = o.querySelector(".on-logo"); g.style.webkitMaskImage = g.style.maskImage = "url(" + src.src + ")"; })();</script>
 <main>
   <div id="setupWarn" class="banner warn hidden">
     <b>Not connected to Supabase yet.</b> Paste your project URL and anon key into the two lines near the top of this file.
@@ -4394,116 +4425,92 @@
 
 
   // ---------- opening intro ----------
-  // Like a window opening from the Dock on a Mac: the Maile logo appears very large in the middle of the
-  // screen, every part of the page pours out of it into its place (the top bar's buttons, then each panel
-  // of the open screen, nearest first), and then the logo slides up while shrinking back to its normal
-  // size and spot on the top bar. A tap skips straight to the end. localStorage fl3-calm=1 turns it off.
+  // Same as the Maile bid tracker: the logo sits huge in the middle in a glossy white bubble while a glare
+  // crosses it, it waves, then every part of the page bursts out of it genie style (nearest first) while the
+  // logo flies up and shrinks into its spot on the top bar. A tap skips it. localStorage fl3-calm=1 turns it off.
   function playIntro() {
     var root = document.documentElement;
-    var plate = document.querySelector(".logo-plate"), logo = document.querySelector(".logo");
-    if (!root.classList.contains("intro-pre") || !plate || !logo || !plate.animate) { root.classList.remove("intro-pre"); return; }
+    if (!root.classList.contains("intro")) { var o = document.getElementById("intro"); if (o) o.remove(); return; }
+    var ov = document.getElementById("intro"), big = ov && ov.querySelector(".intro-logo"), bub = ov && ov.querySelector(".intro-bubble"), bg = ov && ov.querySelector(".intro-bg");
+    var real = document.querySelector(".logo-plate .logo"), main = document.querySelector("main");
+    var anims = [], done = false, stage = 0, t0 = Date.now();
     var sec = document.querySelector("main > section:not(.hidden)");
     if (sec) sec.classList.remove("wgIn");
-    root.classList.add("intro-on");
-    var veil = document.createElement("div"); veil.className = "intro-veil"; document.body.appendChild(veil);
-
-    // where the logo really sits, and how far / how much bigger it has to be to fill the middle of the screen
-    var R = plate.getBoundingClientRect(), vw = window.innerWidth, vh = window.innerHeight;
-    var S = Math.max(1.3, Math.min(vw * 0.42 / R.width, vh * 0.22 / R.height, 2.8));
-    var dx = vw / 2 - (R.left + R.width / 2), dy = vh / 2 - (R.top + R.height / 2);
-    var cx = vw / 2, cy = vh / 2;
-
-    // the pieces that pour out: the top bar's name and tabs, the big window, then the panels inside the open screen
-    var parts = [document.querySelector(".app-name"), document.querySelector(".tabs")];
-    var main = document.querySelector("main");
-    var kids = sec ? Array.prototype.slice.call(sec.children).filter(function (el) { return el.offsetParent !== null && el.getBoundingClientRect().height > 0; }) : [];
-    // a panel made of several cards side by side pours out card by card
-    var pieces = [];
-    kids.forEach(function (k) {
-      var inner = k.querySelector(".scan-actions, .pick-grid, .fleet-grid");
-      if (inner && k.children.length <= 3) { Array.prototype.forEach.call(k.children, function (c) { if (c.offsetParent !== null) pieces.push(c); }); }
-      else pieces.push(k);
-    });
-    pieces = pieces.filter(function (el) { var r = el.getBoundingClientRect(); return r.top < vh + 40; });
-    pieces.sort(function (a, b) { return a.getBoundingClientRect().top - b.getBoundingClientRect().top; });
-
-    // timeline: pop up (0.5s), sit in its bubble while a glare sweeps across (1s), panels blow into place,
-    // then the logo waves and zooms up into its spot
-    var anims = [], T_POP = 480, T_HOLD = 950, T_OUT = T_POP + T_HOLD, STAG = 80, DUR = 760;
-    root.classList.remove("intro-pre");
-    // 2) a shiny glare sweeps across it while it sits there
-    var gloss = document.querySelector(".logo-gloss");
-    if (gloss) anims.push(gloss.animate([
-      { backgroundPosition: "-150% 0, 0 0" }, { backgroundPosition: "250% 0, 0 0" }
-    ], { duration: 1000, delay: T_POP + 40, easing: "cubic-bezier(.45,0,.55,1)", fill: "backwards" }));
-
-    function genie(el, delay, dur) {
-      var r = el.getBoundingClientRect(), ex = cx - (r.left + r.width / 2), ey = cy - (r.top + r.height / 2);
-      var sx = Math.max(0.04, Math.min(0.35, (R.width * S * 0.4) / Math.max(1, r.width)));
-      return el.animate([
-        { transform: "translate(" + ex + "px," + ey + "px) scale(" + sx + ",0.03)", opacity: 0, offset: 0 },
-        { transform: "translate(" + ex * 0.55 + "px," + ey * 0.65 + "px) scale(" + Math.min(1, sx * 1.4) + ",0.8)", opacity: 1, offset: 0.38 },
-        { transform: "translate(" + ex * 0.06 + "px," + ey * 0.05 + "px) scale(0.94,1.05)", offset: 0.74 },
-        { transform: "translate(0px,0px) scale(1.02,0.98)", offset: 0.88 },
-        { transform: "translate(0px,0px) scale(1,1)", opacity: 1, offset: 1 }
-      ], { duration: dur, delay: delay, easing: "cubic-bezier(.22,.9,.3,1)", fill: "backwards" });
-    }
-    // 3) the big window bursts open out of the logo, and everything on it blows into place one after another
-    if (main) {
-      var M = main.getBoundingClientRect(), ox = cx - M.left, oy = cy - M.top;
-      // grows out of the logo as one whole window (scaled, never clipped), so its round corners and white ring
-      // stay in shape the whole way
-      main.style.transformOrigin = ox + "px " + oy + "px";
-      anims.push(main.animate([
-        { transform: "scale(.08)", opacity: 0 },
-        { transform: "scale(1.025)", opacity: 1, offset: 0.7 },
-        { transform: "none", opacity: 1 }
-      ], { duration: 640, delay: T_OUT - 120, easing: "cubic-bezier(.3,.8,.3,1)", fill: "backwards" }));
-    }
-    var order = parts.filter(Boolean).concat(pieces), last = T_OUT;
-    order.forEach(function (el, i) {
-      var d = T_OUT + Math.min(i, 10) * STAG;
-      anims.push(genie(el, d, DUR)); last = Math.max(last, d + DUR);
-    });
-    var T_WAVE = 420, T_HOME = 520;
-    last = last - Math.round(DUR * 0.35);   // wave as the last panel is settling, not after it
-    anims.push(veil.animate([{ opacity: 0 }, { opacity: 1, offset: 0.2 }, { opacity: 1, offset: 0.55 }, { opacity: 0 }],
-      { duration: last + T_WAVE + 200, easing: "ease-out", fill: "forwards" }));
-    // the logo's whole trip is ONE animation (pop up, sit, wave, zoom home). Stacking several animations on the
-    // same element is where iPhone Safari goes wrong, and every step uses the same transform list so it never
-    // has to guess how to blend them.
-    function tf(x, y, s, r) { return "translate(" + x + "px," + y + "px) scale(" + s + ") rotate(" + r + "deg)"; }
-    var T_END = last + T_WAVE + T_HOME;
-    function at(ms) { return Math.min(1, Math.max(0, ms / T_END)); }
-    var home = plate.animate([
-      { transform: tf(dx, dy, S * 0.25, -12), opacity: 0, offset: 0, easing: "cubic-bezier(.3,1.3,.5,1)" },
-      { transform: tf(dx, dy, S * 1.06, 2), opacity: 1, offset: at(T_POP * 0.7), easing: "ease-out" },
-      { transform: tf(dx, dy, S, 0), opacity: 1, offset: at(T_POP) },
-      { transform: tf(dx, dy, S, 0), opacity: 1, offset: at(last), easing: "ease-in-out" },
-      { transform: tf(dx, dy, S, -11), opacity: 1, offset: at(last + T_WAVE * 0.22), easing: "ease-in-out" },
-      { transform: tf(dx, dy, S, 9), opacity: 1, offset: at(last + T_WAVE * 0.5), easing: "ease-in-out" },
-      { transform: tf(dx, dy, S, -4), opacity: 1, offset: at(last + T_WAVE * 0.75), easing: "ease-in-out" },
-      { transform: tf(dx, dy, S, 0), opacity: 1, offset: at(last + T_WAVE), easing: "cubic-bezier(.6,0,.2,1)" },
-      { transform: tf(0, -10, 1.08, 0), opacity: 1, offset: at(last + T_WAVE + T_HOME * 0.8), easing: "ease-out" },
-      { transform: tf(0, 0, 1, 0), opacity: 1, offset: 1 }
-    ], { duration: T_END, fill: "both" });
-    anims.push(home);
-    last = last + T_WAVE;   // the top bar gets its colour back as the logo starts zooming home
-    var done = false;
     function finish() {
       if (done) return; done = true;
-      anims.forEach(function (a) { try { a.cancel(); } catch (e) {} });
-      if (veil.parentNode) veil.parentNode.removeChild(veil);
-      if (main) main.style.transformOrigin = "";
-      root.classList.add("intro-done"); root.classList.remove("intro-on");
-      document.removeEventListener("pointerdown", finish, true);
+      anims.forEach(function (a) { try { a.finish(); } catch (e) {} });
+      root.classList.add("intro-done"); root.classList.remove("intro", "intro-wait"); if (ov) ov.remove();
       if (view === "scan") setTimeout(scanFocus, 30);
     }
-    // the top bar gets its colour back as the logo arrives
-    setTimeout(function () { if (!done) root.classList.add("intro-bar"); }, last);
-    home.onfinish = finish;
-    document.addEventListener("pointerdown", finish, true);
-    setTimeout(finish, last + 2000);   // never get stuck
+    if (!ov || !big || !bub || !bg || !real || !main) { finish(); return; }
+    setTimeout(finish, 9000);                       // never leave the page covered
+    ov.addEventListener("click", finish);           // a tap skips it
+
+    function visible(r) { return r.width > 1 && r.height > 1 && r.bottom > 0 && r.top < innerHeight && r.right > 0 && r.left < innerWidth; }
+    // the pieces that fly out: the top bar's parts, then the open screen's blocks (big blocks split into their cards)
+    function pieces() {
+      var out = [];
+      function add(el, depth) {
+        var r = el.getBoundingClientRect(); if (!visible(r)) return;
+        var kids = Array.prototype.filter.call(el.children, function (k) { return k.getBoundingClientRect().height > 1; });
+        if (depth < 2 && kids.length >= 2 && r.height > innerHeight * .3) { kids.forEach(function (k) { add(k, depth + 1); }); return; }
+        out.push(el);
+      }
+      document.querySelectorAll("header .app-name, header .tabs, header .logo-plate").forEach(function (el) { add(el, 9); });
+      Array.prototype.forEach.call(main.children, function (el) { add(el, 0); });
+      return out;
+    }
+    function genie(el, ox, oy, delay) {
+      var r = el.getBoundingClientRect(), cx = r.left + r.width / 2, cy = r.top + r.height / 2;
+      var dx = ox - cx, dy = oy - cy, base = getComputedStyle(el).transform; base = base === "none" ? "" : " " + base;
+      // the end nearest the logo stays pinched, like a window pulled out of the dock
+      var below = cy >= oy;
+      var p0 = below ? "polygon(49% 0%,51% 0%,56% 100%,44% 100%)" : "polygon(44% 0%,56% 0%,51% 100%,49% 100%)";
+      var p1 = below ? "polygon(38% 0%,62% 0%,108% 100%,-8% 100%)" : "polygon(-8% 0%,108% 0%,62% 100%,38% 100%)";
+      var full = "polygon(-30% -60%,130% -60%,130% 160%,-30% 160%)";
+      return el.animate([
+        { transform: "translate(" + dx + "px," + dy + "px)" + base + " scale(.05,.03)", clipPath: p0, webkitClipPath: p0, opacity: 0, offset: 0 },
+        { opacity: 1, offset: .12 },
+        { transform: "translate(" + dx * .32 + "px," + dy * .32 + "px)" + base + " scale(.6,1.06)", clipPath: p1, webkitClipPath: p1, offset: .55 },
+        { transform: base.trim() || "none", clipPath: full, webkitClipPath: full, opacity: 1, offset: 1 }
+      ], { duration: 820, delay: delay, easing: "cubic-bezier(.22,.7,.25,1)", fill: "backwards" });
+    }
+    // the logo tilts like a wave right after the glare, then the panels burst out while it zooms into the top bar
+    function wave() {
+      if (done || stage) return; stage = 1;
+      bub.style.animation = "none"; ov.style.cursor = "default";
+      var w = bub.animate([{ transform: "none" }, { transform: "rotate(-9deg) scale(1.03)", offset: .25 }, { transform: "rotate(7deg) scale(1.03)", offset: .55 }, { transform: "rotate(-2deg)", offset: .82 }, { transform: "none" }],
+        { duration: 600, easing: "ease-in-out" });
+      anims.push(w);
+      w.finished.then(burst, finish);
+    }
+    function burst() {
+      if (done) return;
+      // measure before anything moves
+      var from = big.getBoundingClientRect(), to = real.getBoundingClientRect();
+      var lr = bub.getBoundingClientRect(), ox = lr.left + lr.width / 2, oy = lr.top + lr.height / 2;
+      root.classList.remove("intro-wait");
+      var list = pieces().map(function (el) { var r = el.getBoundingClientRect(); return { el: el, d: Math.hypot(r.left + r.width / 2 - ox, r.top + r.height / 2 - oy) }; })
+        .sort(function (a, b) { return a.d - b.d; });
+      list.forEach(function (x, i) { anims.push(genie(x.el, ox, oy, Math.min(i * 35, 300))); });
+      anims.push(main.animate([{ opacity: 0 }, { opacity: 1 }], { duration: 450, easing: "ease-out", fill: "backwards" }));
+      zoom(from, to);
+    }
+    function zoom(from, to) {
+      if (!visible(to) || !from.width) { setTimeout(finish, 1100); return; }
+      var s = to.width / from.width, dx = (to.left + to.width / 2) - (from.left + from.width / 2), dy = (to.top + to.height / 2) - (from.top + from.height / 2);
+      var a = bub.animate([{ transform: "none" }, { transform: "translate(" + dx + "px," + dy + "px) scale(" + s + ")" }], { duration: 1000, delay: 120, easing: "cubic-bezier(.55,0,.2,1)", fill: "both" });
+      anims.push(a, bg.animate([{ opacity: 1 }, { opacity: 0 }], { duration: 520, delay: 120, easing: "ease-in", fill: "both" }));
+      var glow = document.createElement("style"); glow.textContent = "#intro::before{transition:opacity .6s;opacity:0!important}"; document.head.appendChild(glow);
+      Promise.all(anims.map(function (x) { return x.finished; })).then(function () { finish(); glow.remove(); }, finish);
+    }
+    // start once the logo has loaded (or after 3.5s), and not before the glare has crossed the logo
+    function ready() { return big.complete; }
+    function check() {
+      if (stage || done) return; var t = Date.now() - t0;
+      if ((ready() && t >= 1600) || t >= 3500) wave(); else setTimeout(check, ready() ? 1600 - t : 60);
+    }
+    check();
   }
   (function init() {
     navStart();
@@ -4525,22 +4532,7 @@
     fetchRemote().then(function () {
       if (launchCode && !launched && view === "scan" && trucks.length) handleScan(launchCode, null);
     });
-    // wait for the logo picture and the fonts before measuring, so on a phone on cell data the panels and logo
-    // aren't measured half-loaded (never more than about a second)
-    (function startIntro() {
-      var started = false, waits = [];
-      function go() {
-        if (started) return; started = true;
-        requestAnimationFrame(function () {
-          try { playIntro(); } catch (e) { document.documentElement.classList.remove("intro-pre", "intro-on"); }
-        });
-      }
-      var img = document.querySelector(".logo");
-      if (img && img.tagName === "IMG" && !img.complete) waits.push(new Promise(function (r) { img.addEventListener("load", r); img.addEventListener("error", r); }));
-      if (document.fonts && document.fonts.ready) waits.push(document.fonts.ready);
-      if (window.Promise && waits.length) Promise.all(waits).then(go, go); else go();
-      setTimeout(go, 1100);
-    })();
+    try { playIntro(); } catch (e) { document.documentElement.classList.remove("intro", "intro-wait"); var io = document.getElementById("intro"); if (io) io.remove(); }
   })();
 })();
 </script>
