@@ -6,7 +6,7 @@
 <meta name="apple-mobile-web-app-capable" content="yes" />
 <meta name="mobile-web-app-capable" content="yes" />
 <meta name="apple-mobile-web-app-status-bar-style" content="black" />
-<meta name="theme-color" content="#22355E" />
+<meta name="theme-color" content="#0C142A" />
 <link rel="manifest" href="manifest.webmanifest" />
 <link rel="icon" type="image/png" sizes="48x48" href="favicon.png" />
 <link rel="icon" type="image/png" sizes="192x192" href="icon-192.png" />
@@ -783,6 +783,9 @@
   @keyframes introPop { 0% { opacity: 0; transform: scale(.55); } 100% { opacity: 1; transform: none; } }
   @keyframes introGlow { 0% { opacity: 0; transform: translate(-50%,-50%) scale(.4); } 100% { opacity: 1; transform: translate(-50%,-50%) scale(1); } }
   html.intro-wait header, html.intro-wait main { visibility: hidden; }
+  /* while the top bar is still hidden, a navy strip along the very top keeps the iPhone's status bar area navy
+     (Safari colours it from whatever is at the top of the page, which was the green-tinted photo) */
+  #intro::after { content: ""; position: fixed; top: 0; left: 0; right: 0; height: 6px; background: rgb(12,20,42); pointer-events: none; }
   html.intro .logo-plate .logo, html.intro .logo-gloss { opacity: 0; }
   html.intro main, html.intro main *, html.intro header, html.intro header * { animation: none !important; }
   html.intro, html.intro body { overflow: hidden; }
